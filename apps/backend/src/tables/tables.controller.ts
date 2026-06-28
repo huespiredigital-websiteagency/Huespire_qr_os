@@ -6,6 +6,7 @@ import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
+import { PaginationDto } from "../common/dto/pagination.dto";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 
 @ApiTags("tables")
@@ -19,13 +20,12 @@ export class TablesController {
   @Roles("SUPER_ADMIN", "OWNER", "MANAGER", "WAITER", "CASHIER")
   @ApiOperation({ summary: "Get all tables of the restaurant" })
   @ApiQuery({ name: "branchId", required: false, description: "Filter tables by Branch ID" })
-  async findAll(@CurrentUser() user: any, @Query("branchId") branchId?: string) {
-    const tables = await this.tablesService.findAll(user.restaurantId, branchId);
-    return {
-      success: true,
-      message: "Tables retrieved successfully",
-      data: tables,
-    };
+  async findAll(
+    @CurrentUser() user: any,
+    @Query() paginationDto: PaginationDto,
+    @Query("branchId") branchId?: string,
+  ) {
+    return this.tablesService.findAll(user.restaurantId, paginationDto, branchId);
   }
 
   @Get(":id")

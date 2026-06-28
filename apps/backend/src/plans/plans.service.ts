@@ -4,6 +4,8 @@ import { Plan } from "@prisma/client";
 import { CreatePlanDto } from "./dto/create-plan.dto";
 import { UpdatePlanDto } from "./dto/update-plan.dto";
 
+import { PaginationDto, PaginatedResult } from "../common/dto/pagination.dto";
+
 @Injectable()
 export class PlansService {
   constructor(private readonly prisma: PrismaService) {}
@@ -27,8 +29,33 @@ export class PlansService {
     });
   }
 
-  async findAll(): Promise<Plan[]> {
-    return this.prisma.plan.findMany();
+  async findAll(paginationDto?: PaginationDto): Promise<PaginatedResult<Plan>> {
+    const page = Number(paginationDto?.page) || 1;
+    const limit = Number(paginationDto?.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const sortBy = paginationDto?.sortBy || "displayOrder";
+    const sortOrder = (paginationDto?.sortOrder || "asc").toLowerCase() as "asc" | "desc";
+
+    const [total, data] = await Promise.all([
+      this.prisma.plan.count({ where: { isActive: true } }),
+      this.prisma.plan.findMany({
+        where: { isActive: true },
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder }
+      })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   async findOne(id: string): Promise<Plan | null> {

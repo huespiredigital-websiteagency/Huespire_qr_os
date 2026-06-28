@@ -14,7 +14,9 @@ export default function FoodDetailsPage() {
   const id = params.id as string;
   const token = searchParams.get("token");
 
-  const { restaurant, addons, addToCart } = useCustomerStore();
+  const restaurant = useCustomerStore((state) => state.restaurant);
+  const addons = useCustomerStore((state) => state.addons);
+  const addToCart = useCustomerStore((state) => state.addToCart);
   const currency = restaurant?.currency || "INR";
   const theme = restaurant?.theme || "dark";
   const isDark = theme === "dark";
@@ -173,7 +175,7 @@ export default function FoodDetailsPage() {
       {/* Top Banner with Image and Back button */}
       <div className="relative w-full h-72 bg-neutral-800">
         {primaryImg ? (
-          <img src={primaryImg} alt={item.name} className="w-full h-full object-cover" />
+          <img src={primaryImg} alt={item.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-neutral-500">
             No Image Available

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, ParseUUIDPipe } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Query, ParseUUIDPipe } from "@nestjs/common";
 import { CategoriesService } from "./categories.service";
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
@@ -6,6 +6,7 @@ import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
+import { PaginationDto } from "../common/dto/pagination.dto";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
 @ApiTags("categories")
@@ -18,13 +19,11 @@ export class CategoriesController {
   @Get()
   @Roles("SUPER_ADMIN", "OWNER", "MANAGER", "WAITER", "CASHIER")
   @ApiOperation({ summary: "Get all categories of the restaurant" })
-  async findAll(@CurrentUser() user: any) {
-    const categories = await this.categoriesService.findAll(user.restaurantId);
-    return {
-      success: true,
-      message: "Categories retrieved successfully",
-      data: categories,
-    };
+  async findAll(
+    @CurrentUser() user: any,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return this.categoriesService.findAll(user.restaurantId, paginationDto);
   }
 
   @Get(":id")

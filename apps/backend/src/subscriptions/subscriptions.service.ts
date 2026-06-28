@@ -1,10 +1,40 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Subscription } from "@prisma/client";
+import { PaginationDto, PaginatedResult } from "../common/dto/pagination.dto";
 
 @Injectable()
 export class SubscriptionsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findAll(paginationDto?: PaginationDto): Promise<PaginatedResult<Subscription>> {
+    const page = Number(paginationDto?.page) || 1;
+    const limit = Number(paginationDto?.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const sortBy = paginationDto?.sortBy || "createdAt";
+    const sortOrder = (paginationDto?.sortOrder || "desc").toLowerCase() as "asc" | "desc";
+
+    const [total, data] = await Promise.all([
+      this.prisma.subscription.count(),
+      this.prisma.subscription.findMany({
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+        include: { plan: true }
+      })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
 
   async getSubscription(restaurantId: string): Promise<Subscription> {
     const subscription = await this.prisma.subscription.findUnique({

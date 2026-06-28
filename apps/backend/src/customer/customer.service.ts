@@ -11,11 +11,40 @@ export class CustomerService {
   async validateToken(token: string) {
     const qrCode = await this.prisma.qRCode.findUnique({
       where: { qrToken: token },
-      include: {
+      select: {
+        id: true,
+        isActive: true,
         table: {
-          include: {
+          select: {
+            id: true,
+            tableName: true,
+            tableNumber: true,
+            seatingCapacity: true,
+            isActive: true,
+            deletedAt: true,
             branch: {
-              include: { restaurant: { include: { settings: true } } }
+              select: {
+                id: true,
+                name: true,
+                isActive: true,
+                deletedAt: true,
+                restaurant: {
+                  select: {
+                    id: true,
+                    name: true,
+                    logoUrl: true,
+                    currency: true,
+                    taxPercentage: true,
+                    isActive: true,
+                    deletedAt: true,
+                    settings: {
+                      select: {
+                        theme: true
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -191,11 +220,32 @@ export class CustomerService {
     let subtotal = 0;
     let validatedItems = [];
 
-    for (const item of items) {
-      const menuItem = await this.prisma.menuItem.findFirst({
-        where: { id: item.menuItemId, restaurantId, isAvailable: true, deletedAt: null }
-      });
+    // 1. Collect all unique IDs to execute bulk queries (bypassing N+1)
+    const menuItemIds = Array.from(new Set(items.map(i => i.menuItemId)));
+    const variantIds = Array.from(new Set(items.map(i => i.variantId).filter((id): id is string => !!id)));
+    const addonIds = Array.from(new Set(items.flatMap(i => i.addonIds || []).filter((id): id is string => !!id)));
 
+    // 2. Perform exactly 3 database queries in parallel (where applicable)
+    const [menuItems, variants, addons] = await Promise.all([
+      this.prisma.menuItem.findMany({
+        where: { id: { in: menuItemIds }, restaurantId, isAvailable: true, deletedAt: null }
+      }),
+      variantIds.length > 0
+        ? this.prisma.variant.findMany({ where: { id: { in: variantIds }, isAvailable: true } })
+        : Promise.resolve([]),
+      addonIds.length > 0
+        ? this.prisma.addon.findMany({ where: { id: { in: addonIds }, restaurantId, isActive: true } })
+        : Promise.resolve([])
+    ]);
+
+    // 3. Map list inputs into O(1) in-memory hash maps
+    const menuItemMap = new Map(menuItems.map(m => [m.id, m]));
+    const variantMap = new Map(variants.map(v => [v.id, v]));
+    const addonMap = new Map(addons.map(a => [a.id, a]));
+
+    // 4. Validate and calculate cart items
+    for (const item of items) {
+      const menuItem = menuItemMap.get(item.menuItemId);
       if (!menuItem) {
         throw new BadRequestException(`Menu item ${item.menuItemId} is invalid, inactive or deleted`);
       }
@@ -204,10 +254,8 @@ export class CustomerService {
       let variantName = null;
 
       if (item.variantId) {
-        const variant = await this.prisma.variant.findFirst({
-          where: { id: item.variantId, menuItemId: item.menuItemId, isAvailable: true }
-        });
-        if (!variant) {
+        const variant = variantMap.get(item.variantId);
+        if (!variant || variant.menuItemId !== item.menuItemId) {
           throw new BadRequestException(`Variant ${item.variantId} is invalid or unavailable for item ${menuItem.name}`);
         }
         baseUnitPrice = Number(variant.price);
@@ -217,13 +265,11 @@ export class CustomerService {
       let unitPriceWithAddons = baseUnitPrice;
       let addonsList = [];
       if (item.addonIds && item.addonIds.length > 0) {
-        const addons = await this.prisma.addon.findMany({
-          where: { id: { in: item.addonIds }, restaurantId, isActive: true }
-        });
-        if (addons.length !== item.addonIds.length) {
-          throw new BadRequestException(`One or more addons are invalid or inactive`);
-        }
-        for (const addon of addons) {
+        for (const addonId of item.addonIds) {
+          const addon = addonMap.get(addonId);
+          if (!addon) {
+            throw new BadRequestException(`One or more addons are invalid or inactive`);
+          }
           unitPriceWithAddons += Number(addon.additionalPrice);
           addonsList.push({
             id: addon.id,

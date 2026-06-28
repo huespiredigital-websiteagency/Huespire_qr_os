@@ -6,6 +6,8 @@ import { CreateTableDto } from "./dto/create-table.dto";
 import { UpdateTableDto } from "./dto/update-table.dto";
 import { Table } from "@prisma/client";
 
+import { PaginationDto, PaginatedResult } from "../common/dto/pagination.dto";
+
 @Injectable()
 export class TablesService {
   constructor(
@@ -14,18 +16,43 @@ export class TablesService {
     private readonly qrService: QRService,
   ) {}
 
-  async findAll(restaurantId: string, branchId?: string): Promise<Table[]> {
-    return this.prisma.table.findMany({
-      where: {
-        restaurantId,
-        deletedAt: null,
-        ...(branchId ? { branchId } : {}),
-      },
-      include: {
-        qrCode: true,
-        branch: true,
-      },
-    });
+  async findAll(restaurantId: string, paginationDto?: PaginationDto, branchId?: string): Promise<PaginatedResult<Table>> {
+    const page = Number(paginationDto?.page) || 1;
+    const limit = Number(paginationDto?.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const sortBy = paginationDto?.sortBy || "tableNumber";
+    const sortOrder = (paginationDto?.sortOrder || "asc").toLowerCase() as "asc" | "desc";
+
+    const where = {
+      restaurantId,
+      deletedAt: null,
+      ...(branchId ? { branchId } : {}),
+    };
+
+    const [total, data] = await Promise.all([
+      this.prisma.table.count({ where }),
+      this.prisma.table.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+        include: {
+          qrCode: true,
+          branch: true,
+        }
+      })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   async findOne(restaurantId: string, id: string): Promise<Table> {

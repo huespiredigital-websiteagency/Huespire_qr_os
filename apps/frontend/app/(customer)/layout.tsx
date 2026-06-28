@@ -11,16 +11,14 @@ function CustomerStateLoader({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   
-  const {
-    token,
-    restaurant,
-    table,
-    cart,
-    setToken,
-    setMenuData,
-    clearCart,
-    guestName,
-  } = useCustomerStore();
+  const token = useCustomerStore((state) => state.token);
+  const restaurant = useCustomerStore((state) => state.restaurant);
+  const table = useCustomerStore((state) => state.table);
+  const cart = useCustomerStore((state) => state.cart);
+  const setToken = useCustomerStore((state) => state.setToken);
+  const setMenuData = useCustomerStore((state) => state.setMenuData);
+  const clearCart = useCustomerStore((state) => state.clearCart);
+  const guestName = useCustomerStore((state) => state.guestName);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

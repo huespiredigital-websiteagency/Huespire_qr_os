@@ -5,6 +5,7 @@ import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
+import { PaginationDto } from "../common/dto/pagination.dto";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 
 @ApiTags("subscriptions")
@@ -13,6 +14,14 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from "@ne
 @Controller("subscriptions")
 export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
+
+  @Get()
+  @Roles("SUPER_ADMIN")
+  @ApiOperation({ summary: "Get all restaurant subscriptions (Super Admin only)" })
+  @ApiResponse({ status: 200, description: "Returns paginated subscriptions" })
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return this.subscriptionsService.findAll(paginationDto);
+  }
 
   @Get("me")
   @Roles("SUPER_ADMIN", "OWNER", "MANAGER")

@@ -10,7 +10,8 @@ export default function MyOrdersPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
-  const { orderIds, restaurant } = useCustomerStore();
+  const orderIds = useCustomerStore((state) => state.orderIds);
+  const restaurant = useCustomerStore((state) => state.restaurant);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

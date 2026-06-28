@@ -3,6 +3,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateMenuItemDto } from "./dto/create-menu-item.dto";
 import { UpdateMenuItemDto } from "./dto/update-menu-item.dto";
 
+import { PaginationDto, PaginatedResult } from "../common/dto/pagination.dto";
+
 @Injectable()
 export class MenuItemsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -14,21 +16,43 @@ export class MenuItemsService {
       .replace(/(^-|-$)+/g, "");
   }
 
-  async findAll(restaurantId: string, categoryId?: string) {
+  async findAll(restaurantId: string, paginationDto?: PaginationDto, categoryId?: string): Promise<PaginatedResult<any>> {
+    const page = Number(paginationDto?.page) || 1;
+    const limit = Number(paginationDto?.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const sortBy = paginationDto?.sortBy || "displayOrder";
+    const sortOrder = (paginationDto?.sortOrder || "asc").toLowerCase() as "asc" | "desc";
+
     const whereClause: any = { restaurantId, deletedAt: null };
     if (categoryId) {
       whereClause.categoryId = categoryId;
     }
 
-    return this.prisma.menuItem.findMany({
-      where: whereClause,
-      orderBy: { displayOrder: "asc" },
-      include: {
-        category: { select: { id: true, name: true } },
-        variants: { where: { isAvailable: true }, orderBy: { displayOrder: 'asc' } },
-        images: { where: { deletedAt: null }, orderBy: { displayOrder: 'asc' } },
+    const [total, data] = await Promise.all([
+      this.prisma.menuItem.count({ where: whereClause }),
+      this.prisma.menuItem.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+        include: {
+          category: { select: { id: true, name: true } },
+          variants: { where: { isAvailable: true }, orderBy: { displayOrder: 'asc' } },
+          images: { where: { deletedAt: null }, orderBy: { displayOrder: 'asc' } },
+        }
+      })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
       }
-    });
+    };
   }
 
   async findOne(restaurantId: string, id: string) {

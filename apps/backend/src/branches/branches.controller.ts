@@ -7,6 +7,7 @@ import { RolesGuard } from "../common/guards/roles.guard";
 import { TenantGuard } from "../common/guards/tenant.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
+import { PaginationDto } from "../common/dto/pagination.dto";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 
 @ApiTags("branches")
@@ -21,7 +22,11 @@ export class BranchesController {
   @ApiOperation({ summary: "Get all branches of the resolved restaurant" })
   @ApiQuery({ name: "restaurantId", required: false, description: "Restaurant ID (Super Admin only)" })
   @ApiResponse({ status: 200, description: "Branches retrieved successfully" })
-  async findAll(@CurrentUser() user: any, @Query("restaurantId") restaurantId?: string) {
+  async findAll(
+    @CurrentUser() user: any,
+    @Query() paginationDto: PaginationDto,
+    @Query("restaurantId") restaurantId?: string,
+  ) {
     let targetRestaurantId = user.restaurantId;
 
     if (user.role === "SUPER_ADMIN") {
@@ -35,12 +40,7 @@ export class BranchesController {
       }
     }
 
-    const branches = await this.branchesService.findAll(targetRestaurantId);
-    return {
-      success: true,
-      message: "Branches retrieved successfully",
-      data: branches,
-    };
+    return this.branchesService.findAll(targetRestaurantId, paginationDto);
   }
 
   @Get(":id")

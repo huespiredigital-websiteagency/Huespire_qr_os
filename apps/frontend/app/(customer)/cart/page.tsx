@@ -11,7 +11,11 @@ export default function CartPage() {
   const router = useRouter();
   const token = searchParams.get("token");
 
-  const { cart, restaurant, updateQuantity, removeFromCart, clearCart } = useCustomerStore();
+  const cart = useCustomerStore((state) => state.cart);
+  const restaurant = useCustomerStore((state) => state.restaurant);
+  const updateQuantity = useCustomerStore((state) => state.updateQuantity);
+  const removeFromCart = useCustomerStore((state) => state.removeFromCart);
+  const clearCart = useCustomerStore((state) => state.clearCart);
   const currency = restaurant?.currency || "INR";
   const theme = restaurant?.theme || "dark";
   const isDark = theme === "dark";

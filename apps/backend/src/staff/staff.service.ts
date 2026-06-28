@@ -6,6 +6,8 @@ import { UpdateStaffDto } from "./dto/update-staff.dto";
 import * as argon2 from "argon2";
 import { User } from "@prisma/client";
 
+import { PaginationDto, PaginatedResult } from "../common/dto/pagination.dto";
+
 @Injectable()
 export class StaffService {
   constructor(
@@ -13,12 +15,34 @@ export class StaffService {
     private readonly subscriptionsService: SubscriptionsService,
   ) {}
 
-  async findAll(restaurantId: string) {
-    return this.prisma.user.findMany({
-      where: { restaurantId, deletedAt: null },
-      include: { role: true },
-      orderBy: { firstName: "asc" },
-    });
+  async findAll(restaurantId: string, paginationDto?: PaginationDto): Promise<PaginatedResult<User & { role: any }>> {
+    const page = Number(paginationDto?.page) || 1;
+    const limit = Number(paginationDto?.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const sortBy = paginationDto?.sortBy || "firstName";
+    const sortOrder = (paginationDto?.sortOrder || "asc").toLowerCase() as "asc" | "desc";
+
+    const [total, data] = await Promise.all([
+      this.prisma.user.count({ where: { restaurantId, deletedAt: null } }),
+      this.prisma.user.findMany({
+        where: { restaurantId, deletedAt: null },
+        include: { role: true },
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder }
+      })
+    ]);
+
+    return {
+      data: data as any,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   async findOne(restaurantId: string, id: string) {

@@ -10,7 +10,13 @@ type OrderStatus = "PENDING" | "ACCEPTED" | "PREPARING" | "READY" | "SERVED" | "
 
 export default function MenuPage() {
   const router = useRouter();
-  const { categories, restaurant, table, token, cart, orderIds, guestName } = useCustomerStore();
+  const categories = useCustomerStore((state) => state.categories);
+  const restaurant = useCustomerStore((state) => state.restaurant);
+  const table = useCustomerStore((state) => state.table);
+  const token = useCustomerStore((state) => state.token);
+  const cart = useCustomerStore((state) => state.cart);
+  const orderIds = useCustomerStore((state) => state.orderIds);
+  const guestName = useCustomerStore((state) => state.guestName);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -484,7 +490,7 @@ export default function MenuPage() {
                     >
                       <div className="relative w-full h-32 rounded-2xl overflow-hidden mb-3 bg-neutral-850">
                         {primaryImg ? (
-                          <img src={primaryImg} alt={item.name} className="w-full h-full object-cover" />
+                          <img src={primaryImg} alt={item.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xs text-neutral-500">
                             No Image
@@ -599,7 +605,7 @@ export default function MenuPage() {
                         >
                           <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-neutral-850 flex-shrink-0">
                             {primaryImg ? (
-                              <img src={primaryImg} alt={item.name} className="w-full h-full object-cover" />
+                              <img src={primaryImg} alt={item.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-500 text-center">
                                 No Image

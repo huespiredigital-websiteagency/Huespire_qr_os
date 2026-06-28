@@ -7,6 +7,7 @@ import { RolesGuard } from "../common/guards/roles.guard";
 import { TenantGuard } from "../common/guards/tenant.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
+import { PaginationDto } from "../common/dto/pagination.dto";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 
 @ApiTags("staff")
@@ -21,7 +22,11 @@ export class StaffController {
   @ApiOperation({ summary: "List all registered staff members of the restaurant" })
   @ApiQuery({ name: "restaurantId", required: false, description: "Restaurant ID (Super Admin only)" })
   @ApiResponse({ status: 200, description: "Staff list retrieved successfully" })
-  async findAll(@CurrentUser() user: any, @Query("restaurantId") restaurantId?: string) {
+  async findAll(
+    @CurrentUser() user: any,
+    @Query() paginationDto: PaginationDto,
+    @Query("restaurantId") restaurantId?: string,
+  ) {
     let targetRestaurantId = user.restaurantId;
 
     if (user.role === "SUPER_ADMIN") {
@@ -35,11 +40,11 @@ export class StaffController {
       }
     }
 
-    const staffList = await this.staffService.findAll(targetRestaurantId);
+    const paginated = await this.staffService.findAll(targetRestaurantId, paginationDto);
     return {
       success: true,
       message: "Staff list retrieved successfully",
-      data: staffList.map(s => ({
+      data: paginated.data.map(s => ({
         id: s.id,
         firstName: s.firstName,
         lastName: s.lastName,
@@ -49,6 +54,7 @@ export class StaffController {
         isActive: s.isActive,
         lastLoginAt: s.lastLoginAt,
       })),
+      meta: paginated.meta,
     };
   }
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, HttpStatus, HttpCode } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Query, HttpStatus, HttpCode } from "@nestjs/common";
 import { PlansService } from "./plans.service";
 import { CreatePlanDto } from "./dto/create-plan.dto";
 import { UpdatePlanDto } from "./dto/update-plan.dto";
@@ -6,6 +6,7 @@ import { Public } from "../common/decorators/public.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { Roles } from "../common/decorators/roles.decorator";
+import { PaginationDto } from "../common/dto/pagination.dto";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from "@nestjs/swagger";
 
 @ApiTags("plans")
@@ -28,8 +29,8 @@ export class PlansController {
   @Get()
   @ApiOperation({ summary: "Get all active subscription plans" })
   @ApiResponse({ status: 200, description: "Returns list of active plans" })
-  findAll() {
-    return this.plansService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.plansService.findAll(paginationDto);
   }
 
   @Public()

@@ -5,6 +5,8 @@ import { CreateBranchDto } from "./dto/create-branch.dto";
 import { UpdateBranchDto } from "./dto/update-branch.dto";
 import { Branch } from "@prisma/client";
 
+import { PaginationDto, PaginatedResult } from "../common/dto/pagination.dto";
+
 @Injectable()
 export class BranchesService {
   constructor(
@@ -12,10 +14,33 @@ export class BranchesService {
     private readonly subscriptionsService: SubscriptionsService,
   ) {}
 
-  async findAll(restaurantId: string): Promise<Branch[]> {
-    return this.prisma.branch.findMany({
-      where: { restaurantId, deletedAt: null },
-    });
+  async findAll(restaurantId: string, paginationDto?: PaginationDto): Promise<PaginatedResult<Branch>> {
+    const page = Number(paginationDto?.page) || 1;
+    const limit = Number(paginationDto?.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const sortBy = paginationDto?.sortBy || "createdAt";
+    const sortOrder = (paginationDto?.sortOrder || "desc").toLowerCase() as "asc" | "desc";
+
+    const [total, data] = await Promise.all([
+      this.prisma.branch.count({ where: { restaurantId, deletedAt: null } }),
+      this.prisma.branch.findMany({
+        where: { restaurantId, deletedAt: null },
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder }
+      })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   async findOne(restaurantId: string, id: string): Promise<Branch> {

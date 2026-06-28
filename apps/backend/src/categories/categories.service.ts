@@ -3,6 +3,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
 
+import { PaginationDto, PaginatedResult } from "../common/dto/pagination.dto";
+
 @Injectable()
 export class CategoriesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -15,16 +17,38 @@ export class CategoriesService {
       .replace(/(^-|-$)+/g, "");
   }
 
-  async findAll(restaurantId: string) {
-    return this.prisma.category.findMany({
-      where: { restaurantId, deletedAt: null },
-      orderBy: { displayOrder: "asc" },
-      include: {
-        _count: {
-          select: { menuItems: { where: { deletedAt: null } } }
+  async findAll(restaurantId: string, paginationDto?: PaginationDto): Promise<PaginatedResult<any>> {
+    const page = Number(paginationDto?.page) || 1;
+    const limit = Number(paginationDto?.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const sortBy = paginationDto?.sortBy || "displayOrder";
+    const sortOrder = (paginationDto?.sortOrder || "asc").toLowerCase() as "asc" | "desc";
+
+    const [total, data] = await Promise.all([
+      this.prisma.category.count({ where: { restaurantId, deletedAt: null } }),
+      this.prisma.category.findMany({
+        where: { restaurantId, deletedAt: null },
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+        include: {
+          _count: {
+            select: { menuItems: { where: { deletedAt: null } } }
+          }
         }
+      })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
       }
-    });
+    };
   }
 
   async findOne(restaurantId: string, id: string) {

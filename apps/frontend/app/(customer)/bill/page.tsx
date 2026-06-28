@@ -10,7 +10,8 @@ export default function TableBillPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
-  const { restaurant, table } = useCustomerStore();
+  const restaurant = useCustomerStore((state) => state.restaurant);
+  const table = useCustomerStore((state) => state.table);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

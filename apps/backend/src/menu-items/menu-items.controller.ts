@@ -6,6 +6,7 @@ import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
+import { PaginationDto } from "../common/dto/pagination.dto";
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 
 @ApiTags("menu-items")
@@ -19,13 +20,12 @@ export class MenuItemsController {
   @Roles("SUPER_ADMIN", "OWNER", "MANAGER", "WAITER", "CASHIER")
   @ApiOperation({ summary: "Get all menu items of the restaurant" })
   @ApiQuery({ name: "categoryId", required: false, description: "Filter items by Category ID" })
-  async findAll(@CurrentUser() user: any, @Query("categoryId") categoryId?: string) {
-    const items = await this.menuItemsService.findAll(user.restaurantId, categoryId);
-    return {
-      success: true,
-      message: "Menu items retrieved successfully",
-      data: items,
-    };
+  async findAll(
+    @CurrentUser() user: any,
+    @Query() paginationDto: PaginationDto,
+    @Query("categoryId") categoryId?: string,
+  ) {
+    return this.menuItemsService.findAll(user.restaurantId, paginationDto, categoryId);
   }
 
   @Get(":id")

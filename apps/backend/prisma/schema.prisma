@@ -156,6 +156,7 @@ model Restaurant {
   @@index([subdomain])
   @@index([email])
   @@index([isActive])
+  @@index([deletedAt])
   @@map("restaurants")
 }
 
@@ -206,6 +207,8 @@ model Branch {
   @@unique([restaurantId, code])
   @@index([restaurantId])
   @@index([isActive])
+  @@index([restaurantId, isActive])
+  @@index([restaurantId, deletedAt])
   @@map("branches")
 }
 
@@ -258,6 +261,8 @@ model User {
   @@index([roleId])
   @@index([email])
   @@index([isActive])
+  @@index([restaurantId, roleId])
+  @@index([restaurantId, deletedAt])
   @@map("users")
 }
 
@@ -321,6 +326,10 @@ model Table {
   @@index([restaurantId])
   @@index([branchId])
   @@index([status])
+  @@index([restaurantId, branchId])
+  @@index([restaurantId, status])
+  @@index([restaurantId, deletedAt])
+  @@index([restaurantId, branchId, status])
   @@map("tables")
 }
 
@@ -366,6 +375,8 @@ model Category {
   @@unique([restaurantId, name])
   @@index([restaurantId])
   @@index([displayOrder])
+  @@index([restaurantId, isActive])
+  @@index([restaurantId, deletedAt])
   @@map("categories")
 }
 
@@ -402,6 +413,9 @@ model MenuItem {
   @@index([categoryId])
   @@index([isAvailable])
   @@index([displayOrder])
+  @@index([restaurantId, categoryId, isAvailable])
+  @@index([restaurantId, isAvailable])
+  @@index([restaurantId, deletedAt])
   @@map("menu_items")
 }
 
@@ -426,6 +440,7 @@ model MenuImage {
 
   @@index([restaurantId])
   @@index([menuItemId])
+  @@index([restaurantId, menuItemId])
   @@map("menu_images")
 }
 
@@ -444,6 +459,7 @@ model Addon {
   orderItemAddons OrderItemAddon[]
 
   @@index([restaurantId])
+  @@index([restaurantId, isActive])
   @@map("addons")
 }
 
@@ -465,6 +481,8 @@ model Variant {
 
   @@index([restaurantId])
   @@index([menuItemId])
+  @@index([restaurantId, menuItemId])
+  @@index([restaurantId, isAvailable])
   @@map("variants")
 }
 
@@ -483,6 +501,7 @@ model Customer {
 
   @@unique([restaurantId, phone])
   @@index([restaurantId])
+  @@index([restaurantId, name])
   @@map("customers")
 }
 
@@ -520,6 +539,11 @@ model Order {
   @@index([orderStatus])
   @@index([paymentStatus])
   @@index([createdAt])
+  @@index([restaurantId, sessionId])
+  @@index([restaurantId, customerId])
+  @@index([restaurantId, orderStatus])
+  @@index([restaurantId, createdAt])
+  @@index([customerId, createdAt])
   @@map("orders")
 }
 
@@ -541,6 +565,7 @@ model OrderItem {
 
   @@index([orderId])
   @@index([menuItemId])
+  @@index([orderId, menuItemId])
   @@map("order_items")
 }
 
@@ -674,5 +699,8 @@ model TableSession {
   @@index([branchId])
   @@index([tableId])
   @@index([status])
+  @@index([restaurantId, status])
+  @@index([restaurantId, branchId, status])
+  @@index([tableId, status])
   @@map("table_sessions")
 }

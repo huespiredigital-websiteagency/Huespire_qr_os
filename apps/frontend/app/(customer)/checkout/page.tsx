@@ -11,7 +11,13 @@ export default function CheckoutPage() {
   const router = useRouter();
   const token = searchParams.get("token");
 
-  const { cart, restaurant, table, clearCart, guestId, guestName, guestPhone } = useCustomerStore();
+  const cart = useCustomerStore((state) => state.cart);
+  const restaurant = useCustomerStore((state) => state.restaurant);
+  const table = useCustomerStore((state) => state.table);
+  const clearCart = useCustomerStore((state) => state.clearCart);
+  const guestId = useCustomerStore((state) => state.guestId);
+  const guestName = useCustomerStore((state) => state.guestName);
+  const guestPhone = useCustomerStore((state) => state.guestPhone);
   const currency = restaurant?.currency || "INR";
   const theme = restaurant?.theme || "dark";
   const isDark = theme === "dark";
