@@ -25,7 +25,13 @@ export class TablesController {
     @Query() paginationDto: PaginationDto,
     @Query("branchId") branchId?: string,
   ) {
-    return this.tablesService.findAll(user.restaurantId, paginationDto, branchId);
+    const paginated = await this.tablesService.findAll(user.restaurantId, paginationDto, branchId);
+    return {
+      success: true,
+      message: "Tables retrieved successfully",
+      data: paginated.data,
+      meta: paginated.meta,
+    };
   }
 
   @Get(":id")

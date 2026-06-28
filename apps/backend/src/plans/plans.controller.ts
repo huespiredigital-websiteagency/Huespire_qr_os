@@ -29,8 +29,9 @@ export class PlansController {
   @Get()
   @ApiOperation({ summary: "Get all active subscription plans" })
   @ApiResponse({ status: 200, description: "Returns list of active plans" })
-  findAll(@Query() paginationDto: PaginationDto) {
-    return this.plansService.findAll(paginationDto);
+  async findAll(@Query() paginationDto: PaginationDto) {
+    const paginated = await this.plansService.findAll(paginationDto);
+    return paginated.data;
   }
 
   @Public()

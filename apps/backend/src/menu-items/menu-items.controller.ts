@@ -25,7 +25,13 @@ export class MenuItemsController {
     @Query() paginationDto: PaginationDto,
     @Query("categoryId") categoryId?: string,
   ) {
-    return this.menuItemsService.findAll(user.restaurantId, paginationDto, categoryId);
+    const paginated = await this.menuItemsService.findAll(user.restaurantId, paginationDto, categoryId);
+    return {
+      success: true,
+      message: "Menu items retrieved successfully",
+      data: paginated.data,
+      meta: paginated.meta,
+    };
   }
 
   @Get(":id")

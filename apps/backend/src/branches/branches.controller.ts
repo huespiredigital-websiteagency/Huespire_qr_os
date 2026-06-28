@@ -40,7 +40,13 @@ export class BranchesController {
       }
     }
 
-    return this.branchesService.findAll(targetRestaurantId, paginationDto);
+    const paginated = await this.branchesService.findAll(targetRestaurantId, paginationDto);
+    return {
+      success: true,
+      message: "Branches retrieved successfully",
+      data: paginated.data,
+      meta: paginated.meta,
+    };
   }
 
   @Get(":id")

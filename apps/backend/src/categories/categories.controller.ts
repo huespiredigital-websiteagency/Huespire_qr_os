@@ -23,7 +23,13 @@ export class CategoriesController {
     @CurrentUser() user: any,
     @Query() paginationDto: PaginationDto,
   ) {
-    return this.categoriesService.findAll(user.restaurantId, paginationDto);
+    const paginated = await this.categoriesService.findAll(user.restaurantId, paginationDto);
+    return {
+      success: true,
+      message: "Categories retrieved successfully",
+      data: paginated.data,
+      meta: paginated.meta,
+    };
   }
 
   @Get(":id")
