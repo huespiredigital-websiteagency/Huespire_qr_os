@@ -1,0 +1,12 @@
+import { Module } from "@nestjs/common";
+import { AddonsController } from "./addons.controller";
+import { AddonsService } from "./addons.service";
+import { PrismaModule } from "../prisma/prisma.module";
+
+@Module({
+  imports: [PrismaModule],
+  controllers: [AddonsController],
+  providers: [AddonsService],
+  exports: [AddonsService],
+})
+export class AddonsModule {}

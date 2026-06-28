@@ -1,0 +1,29 @@
+{
+  "name": "restaurant-os-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multi-tenant Restaurant OS SaaS Platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run start:dev --workspace=apps/backend",
+    "dev:frontend": "npm run dev --workspace=apps/frontend",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm run db:generate --workspace=apps/backend",
+    "db:migrate": "npm run db:migrate --workspace=apps/backend",
+    "db:seed": "npm run db:seed --workspace=apps/backend",
+    "docker:dev": "docker-compose -f docker-compose.yml up -d",
+    "docker:dev:down": "docker-compose -f docker-compose.yml down"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.5.19",
+    "typescript": "^5.4.5"
+  }
+}

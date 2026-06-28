@@ -1,0 +1,50 @@
+# Dependency Directories
+node_modules/
+
+# Next.js Build Outputs
+.next/
+out/
+
+# NestJS / TypeScript Build Outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment Files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Logs and Debug
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database & Docker Cache
+pgdata/
+postgres-data/
+.docker/
+
+# IDE Configuration
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing Coverage
+coverage/
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+
+# User Uploads
+apps/backend/public/uploads/*
+!apps/backend/public/uploads/.gitkeep
