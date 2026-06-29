@@ -84,46 +84,70 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   emitOrderCreated(restaurantId: string, branchId: string, sessionId: string, tableId: string, order: any) {
     this.logger.log(`Broadcasting order.created for order ${order.orderNumber}`);
-    // Kitchen & Waiter room
-    this.server.to(`branch:${branchId}`).emit("order.created", order);
+    
+    // Broadcast to both branch staff & restaurant room (Kitchen, Waiter, Cashier, Owner)
+    if (branchId) this.server.to(`branch:${branchId}`).emit("order.created", order);
+    if (restaurantId) {
+      this.server.to(`restaurant:${restaurantId}`).emit("order.created", order);
+      this.server.to(`restaurant:${restaurantId}`).emit("new.order", order);
+      this.server.to(`restaurant:${restaurantId}`).emit("dashboard.metrics.updated", { type: "ORDER_CREATED" });
+    }
+
     // Customer session room
     if (sessionId) this.server.to(`session:${sessionId}`).emit("order.created", order);
-    // Owner room
-    this.server.to(`restaurant:${restaurantId}`).emit("new.order", order);
-    this.server.to(`restaurant:${restaurantId}`).emit("dashboard.metrics.updated", { type: "ORDER_CREATED" });
   }
 
   emitOrderStatusChanged(restaurantId: string, branchId: string, sessionId: string, tableId: string, orderId: string, status: string, payload: any) {
     this.logger.log(`Broadcasting order status update: ${status} for order ${orderId}`);
     const eventName = `order.${status.toLowerCase()}`;
 
-    // Broadcast to branch staff (Kitchen/Waiter/Cashier)
-    this.server.to(`branch:${branchId}`).emit(eventName, payload);
-    this.server.to(`branch:${branchId}`).emit("order.status.changed", payload);
+    // Broadcast to both branch staff & restaurant room (Kitchen, Waiter, Cashier, Owner)
+    if (branchId) {
+      this.server.to(`branch:${branchId}`).emit(eventName, payload);
+      this.server.to(`branch:${branchId}`).emit("order.status.changed", payload);
+    }
+    if (restaurantId) {
+      this.server.to(`restaurant:${restaurantId}`).emit(eventName, payload);
+      this.server.to(`restaurant:${restaurantId}`).emit("order.status.changed", payload);
+      this.server.to(`restaurant:${restaurantId}`).emit("dashboard.metrics.updated", { type: "ORDER_STATUS_CHANGED", status });
+    }
 
     // Broadcast to customer session & table rooms
     if (sessionId) this.server.to(`session:${sessionId}`).emit(eventName, payload);
     if (tableId) this.server.to(`table:${tableId}`).emit(eventName, payload);
-
-    // Broadcast to Owner dashboard
-    this.server.to(`restaurant:${restaurantId}`).emit("dashboard.metrics.updated", { type: "ORDER_STATUS_CHANGED", status });
   }
 
   emitOrderCancelled(restaurantId: string, branchId: string, sessionId: string, orderId: string, reason: string) {
     this.logger.log(`Broadcasting order.cancelled for order ${orderId}`);
     const payload = { orderId, reason, status: "CANCELLED" };
-    this.server.to(`branch:${branchId}`).emit("order.cancelled", payload);
+    
+    if (branchId) this.server.to(`branch:${branchId}`).emit("order.cancelled", payload);
+    if (restaurantId) {
+      this.server.to(`restaurant:${restaurantId}`).emit("order.cancelled", payload);
+      this.server.to(`restaurant:${restaurantId}`).emit("dashboard.metrics.updated", { type: "ORDER_CANCELLED" });
+    }
+
     if (sessionId) this.server.to(`session:${sessionId}`).emit("order.cancelled", payload);
-    this.server.to(`restaurant:${restaurantId}`).emit("dashboard.metrics.updated", { type: "ORDER_CANCELLED" });
   }
 
   emitPaymentCompleted(restaurantId: string, branchId: string, sessionId: string, tableId: string, paymentData: any) {
     this.logger.log(`Broadcasting payment.completed for session ${sessionId}`);
-    // Cashier & Waiter staff
-    this.server.to(`branch:${branchId}`).emit("payment.completed", paymentData);
-    this.server.to(`branch:${branchId}`).emit("bill.updated", paymentData);
-    this.server.to(`branch:${branchId}`).emit("session.closed", { sessionId, tableId });
-    this.server.to(`branch:${branchId}`).emit("table.available", { tableId });
+    
+    // Broadcast to both branch staff & restaurant room (Cashier, Waiter, Owner)
+    if (branchId) {
+      this.server.to(`branch:${branchId}`).emit("payment.completed", paymentData);
+      this.server.to(`branch:${branchId}`).emit("bill.updated", paymentData);
+      this.server.to(`branch:${branchId}`).emit("session.closed", { sessionId, tableId });
+      this.server.to(`branch:${branchId}`).emit("table.available", { tableId });
+    }
+    if (restaurantId) {
+      this.server.to(`restaurant:${restaurantId}`).emit("payment.completed", paymentData);
+      this.server.to(`restaurant:${restaurantId}`).emit("bill.updated", paymentData);
+      this.server.to(`restaurant:${restaurantId}`).emit("session.closed", { sessionId, tableId });
+      this.server.to(`restaurant:${restaurantId}`).emit("table.available", { tableId });
+      this.server.to(`restaurant:${restaurantId}`).emit("table.status.changed", { tableId, status: "AVAILABLE" });
+      this.server.to(`restaurant:${restaurantId}`).emit("dashboard.metrics.updated", { type: "PAYMENT_COMPLETED" });
+    }
 
     // Customer session & table
     if (sessionId) {
@@ -133,10 +157,5 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (tableId) {
       this.server.to(`table:${tableId}`).emit("table.available", { tableId });
     }
-
-    // Owner metrics
-    this.server.to(`restaurant:${restaurantId}`).emit("payment.completed", paymentData);
-    this.server.to(`restaurant:${restaurantId}`).emit("table.status.changed", { tableId, status: "AVAILABLE" });
-    this.server.to(`restaurant:${restaurantId}`).emit("dashboard.metrics.updated", { type: "PAYMENT_COMPLETED" });
   }
 }
