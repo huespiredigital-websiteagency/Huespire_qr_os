@@ -41,17 +41,17 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         // Execute fetches in parallel
-        const [restRes, subRes, branchRes, staffRes] = await Promise.all([
+        const [restRes, subRes, branchRes, staffRes] = await Promise.allSettled([
           apiClient.get("/restaurants/me"),
           apiClient.get("/subscriptions/me"),
           apiClient.get("/branches"),
           apiClient.get("/staff"),
         ]);
 
-        if (restRes.data?.success) setRestaurant(restRes.data.data);
-        if (subRes.data?.success) setSubscription(subRes.data.data);
-        if (branchRes.data?.success) setBranchesCount(branchRes.data.data.length);
-        if (staffRes.data?.success) setStaffCount(staffRes.data.data.length);
+        if (restRes.status === "fulfilled" && restRes.value.data?.success) setRestaurant(restRes.value.data.data);
+        if (subRes.status === "fulfilled" && subRes.value.data?.success) setSubscription(subRes.value.data.data);
+        if (branchRes.status === "fulfilled" && branchRes.value.data?.success) setBranchesCount(branchRes.value.data.data.length);
+        if (staffRes.status === "fulfilled" && staffRes.value.data?.success) setStaffCount(staffRes.value.data.data.length);
       } catch (err: any) {
         console.error("Failed to load dashboard statistics:", err);
         addToast("Error fetching dashboard statistics. Make sure database is seeded.", "error");
@@ -155,8 +155,8 @@ export default function DashboardPage() {
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
             Welcome Back, {user?.firstName}!
           </h2>
-          <p className="text-slate-400 text-sm sm:text-base">
-            You are managing <span className="text-white font-semibold">{restaurant?.name || "your restaurant"}</span>. Access quick actions, configure branches, onboard staff members, or inspect subscription metrics below.
+          <p className="text-slate-200 text-sm sm:text-base font-medium">
+            You are managing <span className="text-white font-extrabold">{restaurant?.name || "your restaurant"}</span>. Access quick actions, configure branches, onboard staff members, or inspect subscription metrics below.
           </p>
         </div>
       </div>
@@ -169,8 +169,8 @@ export default function DashboardPage() {
             <Store className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Subdomain</p>
-            <p className="text-sm font-bold text-slate-800 truncate max-w-[150px]">
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Subdomain</p>
+            <p className="text-sm font-extrabold text-slate-900 truncate max-w-[150px]">
               {restaurant?.subdomain}.huespire.com
             </p>
           </div>
@@ -182,8 +182,8 @@ export default function DashboardPage() {
             <CreditCard className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current Plan</p>
-            <p className="text-sm font-bold text-slate-800">{activePlanName}</p>
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Current Plan</p>
+            <p className="text-sm font-extrabold text-slate-900">{activePlanName}</p>
           </div>
         </div>
 
@@ -193,9 +193,9 @@ export default function DashboardPage() {
             <GitBranch className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Branches</p>
-            <p className="text-sm font-bold text-slate-800">
-              {branchesCount} <span className="text-xs text-slate-400 font-medium">/ {limitBranches}</span>
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Branches</p>
+            <p className="text-sm font-extrabold text-slate-900">
+              {branchesCount} <span className="text-xs text-slate-600 font-semibold">/ {limitBranches}</span>
             </p>
           </div>
         </div>
@@ -206,9 +206,9 @@ export default function DashboardPage() {
             <Users className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Staff Accounts</p>
-            <p className="text-sm font-bold text-slate-800">
-              {staffCount} <span className="text-xs text-slate-400 font-medium">/ {limitStaff === 999999 ? "∞" : limitStaff}</span>
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Staff Accounts</p>
+            <p className="text-sm font-extrabold text-slate-900">
+              {staffCount} <span className="text-xs text-slate-600 font-semibold">/ {limitStaff === 999999 ? "∞" : limitStaff}</span>
             </p>
           </div>
         </div>

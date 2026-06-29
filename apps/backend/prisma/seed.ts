@@ -203,6 +203,42 @@ async function main() {
   }
   console.log("✔ Demo Owner");
 
+  // 5b. Demo Cashier
+  const cashierRole = await prisma.role.findUniqueOrThrow({ where: { code: "CASHIER" } });
+  const cashierPasswordHash = await argon2.hash("Cashier@123");
+
+  const existingCashier = await prisma.user.findFirst({
+    where: { email: "cashier@restaurantos.local", restaurantId: demoRestaurant.id }
+  });
+
+  if (existingCashier) {
+    await prisma.user.update({
+      where: { id: existingCashier.id },
+      data: {
+        roleId: cashierRole.id,
+        firstName: "Sarah",
+        lastName: "Cashier",
+        passwordHash: cashierPasswordHash,
+        isActive: true,
+        emailVerified: true,
+      }
+    });
+  } else {
+    await prisma.user.create({
+      data: {
+        restaurantId: demoRestaurant.id,
+        roleId: cashierRole.id,
+        firstName: "Sarah",
+        lastName: "Cashier",
+        email: "cashier@restaurantos.local",
+        passwordHash: cashierPasswordHash,
+        isActive: true,
+        emailVerified: true,
+      }
+    });
+  }
+  console.log("✔ Demo Cashier");
+
   // 6. Demo Branch
   let branch = await prisma.branch.findFirst({
     where: { restaurantId: demoRestaurant.id, name: "Main Branch" }

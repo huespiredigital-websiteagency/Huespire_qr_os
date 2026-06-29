@@ -57,6 +57,11 @@ export default function FoodDetailsPage() {
     fetchItem();
   }, [id, token]);
 
+  // Available addons for this specific item
+  const availableAddons = useMemo(() => {
+    return item?.addons || addons || [];
+  }, [item, addons]);
+
   // Live Price Calculation
   const livePrice = useMemo(() => {
     if (!item) return 0;
@@ -74,14 +79,14 @@ export default function FoodDetailsPage() {
     // Add selected addons price
     let addonsPrice = 0;
     selectedAddonIds.forEach((addonId) => {
-      const addon = addons.find((a: any) => a.id === addonId);
+      const addon = availableAddons.find((a: any) => a.id === addonId);
       if (addon) {
         addonsPrice += Number(addon.additionalPrice);
       }
     });
 
     return (basePrice + addonsPrice) * quantity;
-  }, [item, selectedVariantId, selectedAddonIds, quantity, addons]);
+  }, [item, selectedVariantId, selectedAddonIds, quantity, availableAddons]);
 
   const handleAddonToggle = (addonId: string) => {
     setSelectedAddonIds((prev) =>
@@ -107,11 +112,11 @@ export default function FoodDetailsPage() {
 
     // Map addon details
     const selectedAddonsList = selectedAddonIds.map((addonId) => {
-      const addon = addons.find((a: any) => a.id === addonId);
+      const addon = availableAddons.find((a: any) => a.id === addonId);
       return {
-        id: addon.id,
-        name: addon.name,
-        price: Number(addon.additionalPrice),
+        id: addon ? addon.id : addonId,
+        name: addon ? addon.name : "Addon",
+        price: addon ? Number(addon.additionalPrice) : 0,
       };
     });
 
@@ -270,14 +275,14 @@ export default function FoodDetailsPage() {
         )}
 
         {/* Add-ons Selection */}
-        {addons && addons.length > 0 && (
+        {availableAddons && availableAddons.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-amber-500">Add Extras</h3>
               <span className="text-[11px] text-neutral-500">Optional</span>
             </div>
             <div className="space-y-2">
-              {addons.map((addon: any) => (
+              {availableAddons.map((addon: any) => (
                 <label
                   key={addon.id}
                   className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${

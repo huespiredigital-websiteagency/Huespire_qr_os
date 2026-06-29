@@ -75,15 +75,15 @@ export default function TablesPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [tableRes, branchRes, subRes] = await Promise.all([
+      const [tableRes, branchRes, subRes] = await Promise.allSettled([
         apiClient.get("/tables"),
         apiClient.get("/branches"),
         apiClient.get("/subscriptions/me"),
       ]);
 
-      if (tableRes.data?.success) setTables(tableRes.data.data);
-      if (branchRes.data?.success) setBranches(branchRes.data.data);
-      if (subRes.data?.success) setSubscription(subRes.data.data);
+      if (tableRes.status === "fulfilled" && tableRes.value.data?.success) setTables(tableRes.value.data.data);
+      if (branchRes.status === "fulfilled" && branchRes.value.data?.success) setBranches(branchRes.value.data.data);
+      if (subRes.status === "fulfilled" && subRes.value.data?.success) setSubscription(subRes.value.data.data);
     } catch (err: any) {
       console.error("Failed to load tables configurations:", err);
       addToast(err.response?.data?.message || "Failed to retrieve table data.", "error");

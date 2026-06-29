@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsInt, IsNumber, Min, MaxLength } from "class-validator";
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsInt, IsNumber, Min, MaxLength, IsArray, IsUUID } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class CreateAddonDto {
@@ -29,4 +29,16 @@ export class CreateAddonDto {
   @Min(1)
   @IsOptional()
   displayOrder?: number;
+
+  @ApiPropertyOptional({ example: ["uuid-1"], description: "List of Category IDs this add-on applies to" })
+  @IsArray()
+  @IsUUID("4", { each: true })
+  @IsOptional()
+  categoryIds?: string[];
+
+  @ApiPropertyOptional({ example: ["uuid-2"], description: "List of MenuItem IDs this add-on applies to" })
+  @IsArray()
+  @IsUUID("4", { each: true })
+  @IsOptional()
+  menuItemIds?: string[];
 }

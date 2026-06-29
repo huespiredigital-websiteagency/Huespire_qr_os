@@ -18,6 +18,11 @@ import { VariantsModule } from './variants/variants.module';
 import { AddonsModule } from './addons/addons.module';
 import { MenuImagesModule } from './menu-images/menu-images.module';
 import { CustomerModule } from "./customer/customer.module";
+import { MenuImportModule } from "./menu-import/menu-import.module";
+import { BillingModule } from "./billing/billing.module";
+import { KitchenModule } from "./kitchen/kitchen.module";
+import { WaiterModule } from "./waiter/waiter.module";
+import { EventsModule } from "./events/events.module";
 
 @Module({
   imports: [
@@ -41,6 +46,11 @@ import { CustomerModule } from "./customer/customer.module";
     AddonsModule,
     MenuImagesModule,
     CustomerModule,
+    MenuImportModule,
+    BillingModule,
+    KitchenModule,
+    WaiterModule,
+    EventsModule,
   ],
 })
 export class AppModule implements NestModule {

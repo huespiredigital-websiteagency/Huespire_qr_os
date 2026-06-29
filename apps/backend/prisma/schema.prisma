@@ -51,6 +51,13 @@ enum PaymentMethod {
   UPI
   CARD
   ONLINE
+  OTHER
+}
+
+enum BillStatus {
+  OPEN
+  PAID
+  CANCELLED
 }
 
 enum DiscountType {
@@ -146,6 +153,7 @@ model Restaurant {
   customers      Customer[]
   orders         Order[]
   payments       Payment[]
+  bills          Bill[]
   coupons        Coupon[]
   notifications  Notification[]
   auditLogs      AuditLog[]
@@ -203,6 +211,8 @@ model Branch {
   orders         Order[]
   qrCodes        QRCode[]
   tableSessions  TableSession[]
+  bills          Bill[]
+  payments       Payment[]
 
   @@unique([restaurantId, code])
   @@index([restaurantId])
@@ -255,6 +265,7 @@ model User {
   sessions       Session[]
   resetTokens    PasswordResetToken[]
   verifyTokens   VerificationToken[]
+  receivedPayments Payment[]   @relation("ReceivedPayments")
 
   @@unique([restaurantId, email])
   @@index([restaurantId])
@@ -370,7 +381,8 @@ model Category {
   updatedAt    DateTime    @updatedAt
   deletedAt    DateTime?
   
-  menuItems    MenuItem[]
+  menuItems      MenuItem[]
+  categoryAddons CategoryAddon[]
 
   @@unique([restaurantId, name])
   @@index([restaurantId])
@@ -407,6 +419,7 @@ model MenuItem {
   orderItems      OrderItem[]
   images          MenuImage[]
   variants        Variant[]
+  menuItemAddons  MenuItemAddon[]
 
   @@unique([restaurantId, sku])
   @@index([restaurantId])
@@ -457,10 +470,40 @@ model Addon {
   updatedAt       DateTime   @updatedAt
   
   orderItemAddons OrderItemAddon[]
+  menuItemAddons  MenuItemAddon[]
+  categoryAddons  CategoryAddon[]
 
   @@index([restaurantId])
   @@index([restaurantId, isActive])
   @@map("addons")
+}
+
+model MenuItemAddon {
+  id         String   @id @default(uuid())
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  addonId    String
+  addon      Addon    @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([menuItemId, addonId])
+  @@index([menuItemId])
+  @@index([addonId])
+  @@map("menu_item_addons")
+}
+
+model CategoryAddon {
+  id         String   @id @default(uuid())
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  addonId    String
+  addon      Addon    @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([categoryId, addonId])
+  @@index([categoryId])
+  @@index([addonId])
+  @@map("category_addons")
 }
 
 model Variant {
@@ -523,6 +566,24 @@ model Order {
   paymentStatus PaymentStatus @default(PENDING)
   orderStatus   OrderStatus   @default(PENDING)
   notes         String?
+  rejectionReason String?
+
+  // Lifecycle Timestamps & Analytics
+  acceptedAt         DateTime?
+  preparingStartedAt DateTime?
+  readyAt            DateTime?
+  pickedUpAt         DateTime?
+  servedAt           DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+
+  // Staff Action Tracking IDs
+  acceptedById         String?
+  preparingStartedById String?
+  readyById            String?
+  pickedUpById         String?
+  servedById           String?
+
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   
@@ -595,21 +656,62 @@ model OrderItemAddon {
   @@map("order_item_addons")
 }
 
+model Bill {
+  id             String       @id @default(uuid())
+  restaurantId   String
+  restaurant     Restaurant   @relation(fields: [restaurantId], references: [id])
+  branchId       String
+  branch         Branch       @relation(fields: [branchId], references: [id])
+  tableSessionId String
+  tableSession   TableSession @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
+  billNumber     String
+  subtotal       Decimal      @db.Decimal(10, 2)
+  taxAmount      Decimal      @db.Decimal(10, 2)
+  discountAmount Decimal      @default(0.00) @db.Decimal(10, 2)
+  grandTotal     Decimal      @db.Decimal(10, 2)
+  status         BillStatus   @default(OPEN)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  payments       Payment[]
+
+  @@unique([restaurantId, billNumber])
+  @@index([restaurantId])
+  @@index([branchId])
+  @@index([tableSessionId])
+  @@index([status])
+  @@map("bills")
+}
+
 model Payment {
   id                   String        @id @default(uuid())
   restaurantId         String
   restaurant           Restaurant    @relation(fields: [restaurantId], references: [id])
-  orderId              String        @unique
-  order                Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  branchId             String
+  branch               Branch        @relation(fields: [branchId], references: [id])
+  tableSessionId       String
+  tableSession         TableSession  @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
+  billId               String?
+  bill                 Bill?         @relation(fields: [billId], references: [id], onDelete: SetNull)
+  orderId              String?       @unique
+  order                Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   paymentMethod        PaymentMethod
   paymentStatus        PaymentStatus @default(PENDING)
   amount               Decimal       @db.Decimal(10, 2)
+  amountReceived       Decimal?      @db.Decimal(10, 2)
+  changeGiven          Decimal?      @db.Decimal(10, 2)
   transactionReference String?
+  receivedById         String?
+  receivedBy           User?         @relation("ReceivedPayments", fields: [receivedById], references: [id], onDelete: SetNull)
   paidAt               DateTime?
+  notes                String?
   createdAt            DateTime      @default(now())
 
   @@index([restaurantId])
-  @@index([orderId])
+  @@index([branchId])
+  @@index([tableSessionId])
+  @@index([billId])
+  @@index([receivedById])
   @@index([paymentStatus])
   @@index([paymentMethod])
   @@map("payments")
@@ -694,6 +796,8 @@ model TableSession {
   updatedAt      DateTime           @updatedAt
   
   orders         Order[]
+  bills          Bill[]
+  payments       Payment[]
 
   @@index([restaurantId])
   @@index([branchId])

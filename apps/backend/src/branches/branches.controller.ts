@@ -18,7 +18,7 @@ export class BranchesController {
   constructor(private readonly branchesService: BranchesService) {}
 
   @Get()
-  @Roles("SUPER_ADMIN", "OWNER", "MANAGER")
+  @Roles("SUPER_ADMIN", "OWNER", "MANAGER", "WAITER", "CASHIER", "KITCHEN")
   @ApiOperation({ summary: "Get all branches of the resolved restaurant" })
   @ApiQuery({ name: "restaurantId", required: false, description: "Restaurant ID (Super Admin only)" })
   @ApiResponse({ status: 200, description: "Branches retrieved successfully" })

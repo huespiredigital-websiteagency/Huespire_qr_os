@@ -21,6 +21,11 @@ import {
   List,
   Layers,
   PlusCircle,
+  Upload,
+  Receipt,
+  Banknote,
+  Flame,
+  ChefHat
 } from "lucide-react";
 
 export const Sidebar: React.FC = () => {
@@ -36,6 +41,30 @@ export const Sidebar: React.FC = () => {
       href: "/dashboard",
       icon: LayoutDashboard,
       roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "WAITER", "KITCHEN", "CASHIER"],
+    },
+    {
+      name: "Kitchen Display",
+      href: "/dashboard/kitchen",
+      icon: Flame,
+      roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "KITCHEN"],
+    },
+    {
+      name: "Waiter Display",
+      href: "/dashboard/waiter",
+      icon: ChefHat,
+      roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "WAITER"],
+    },
+    {
+      name: "Cashier Billing",
+      href: "/dashboard/cashier",
+      icon: Receipt,
+      roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "CASHIER"],
+    },
+    {
+      name: "Payment Audit",
+      href: "/dashboard/payments",
+      icon: Banknote,
+      roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "CASHIER"],
     },
     {
       name: "Restaurant",
@@ -83,6 +112,12 @@ export const Sidebar: React.FC = () => {
       name: "Add-ons",
       href: "/dashboard/menu/addons",
       icon: PlusCircle,
+      roles: ["SUPER_ADMIN", "OWNER", "MANAGER"],
+    },
+    {
+      name: "Bulk Import",
+      href: "/dashboard/menu/import",
+      icon: Upload,
       roles: ["SUPER_ADMIN", "OWNER", "MANAGER"],
     },
     {
@@ -150,8 +185,8 @@ export const Sidebar: React.FC = () => {
               onClick={() => setMobileSidebarOpen(false)}
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition ${
                 isActive
-                  ? "bg-indigo-600 text-white"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                  ? "bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-600/20"
+                  : "text-slate-300 font-medium hover:bg-slate-800/80 hover:text-white"
               }`}
             >
               <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
@@ -172,7 +207,7 @@ export const Sidebar: React.FC = () => {
               <p className="text-sm font-semibold text-white truncate">
                 {user?.firstName} {user?.lastName}
               </p>
-              <p className="text-xs text-slate-500 truncate capitalize">
+              <p className="text-xs text-slate-400 truncate capitalize font-medium">
                 {user?.role.toLowerCase().replace("_", " ")}
               </p>
             </div>
@@ -182,7 +217,7 @@ export const Sidebar: React.FC = () => {
               logout();
               window.location.href = "/login";
             }}
-            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-red-400 transition cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-red-400 transition cursor-pointer"
             title="Log Out"
           >
             <LogOut className="h-5 w-5" />

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { getCustomerOrder, getCustomerOrderStatus } from "../../../../lib/api/customer";
+import { getSocket } from "../../../../lib/socket";
 import Link from "next/link";
 
 type OrderStatus = "PENDING" | "ACCEPTED" | "PREPARING" | "READY" | "SERVED" | "COMPLETED" | "CANCELLED";
@@ -41,38 +42,42 @@ export default function OrderTrackingPage() {
     fetchInitialOrder();
   }, [id]);
 
-  // Periodic polling for status changes
+  // Real-time socket event listeners for status updates
   useEffect(() => {
     if (!id || !order) return;
-    
-    const currentStatus: OrderStatus = order.orderStatus;
-    
-    // Stop polling if order has reached final states
-    if (["SERVED", "COMPLETED", "CANCELLED"].includes(currentStatus)) {
-      return;
-    }
 
-    const interval = setInterval(async () => {
+    const sessionId = order.sessionId || undefined;
+    const socket = getSocket(sessionId);
+
+    const refreshOrderData = async () => {
       try {
-        const res = await getCustomerOrderStatus(id);
-        if (res.success && res.data && res.data.status) {
-          const newStatus = res.data.status;
-          
-          if (newStatus !== currentStatus) {
-            // Reload order details to refresh the full details
-            const orderRes = await getCustomerOrder(id);
-            if (orderRes.success && orderRes.data) {
-              setOrder(orderRes.data);
-            }
-          }
+        const orderRes = await getCustomerOrder(id);
+        if (orderRes.success && orderRes.data) {
+          setOrder(orderRes.data);
         }
       } catch (err) {
-        console.error("Failed to poll order status", err);
+        console.error("Failed to refresh order status", err);
       }
-    }, 5000);
+    };
 
-    return () => clearInterval(interval);
-  }, [id, order]);
+    socket.on("order.accepted", refreshOrderData);
+    socket.on("order.preparing", refreshOrderData);
+    socket.on("order.ready", refreshOrderData);
+    socket.on("order.served", refreshOrderData);
+    socket.on("order.completed", refreshOrderData);
+    socket.on("order.cancelled", refreshOrderData);
+    socket.on("order.status.changed", refreshOrderData);
+
+    return () => {
+      socket.off("order.accepted", refreshOrderData);
+      socket.off("order.preparing", refreshOrderData);
+      socket.off("order.ready", refreshOrderData);
+      socket.off("order.served", refreshOrderData);
+      socket.off("order.completed", refreshOrderData);
+      socket.off("order.cancelled", refreshOrderData);
+      socket.off("order.status.changed", refreshOrderData);
+    };
+  }, [id, order?.sessionId]);
 
   // Map status to progress step index (0-4)
   const statusStepIndex = useMemo(() => {

@@ -18,7 +18,7 @@ export class StaffController {
   constructor(private readonly staffService: StaffService) {}
 
   @Get()
-  @Roles("SUPER_ADMIN", "OWNER", "MANAGER")
+  @Roles("SUPER_ADMIN", "OWNER", "MANAGER", "WAITER", "CASHIER", "KITCHEN")
   @ApiOperation({ summary: "List all registered staff members of the restaurant" })
   @ApiQuery({ name: "restaurantId", required: false, description: "Restaurant ID (Super Admin only)" })
   @ApiResponse({ status: 200, description: "Staff list retrieved successfully" })

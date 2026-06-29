@@ -60,14 +60,14 @@ export const Modal: React.FC<ModalProps> = ({
               )}
               <button
                 onClick={onClose}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                className="rounded-lg p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto mt-4 pr-1 text-slate-700">
+            <div className="flex-1 overflow-y-auto mt-4 pr-1 text-slate-800">
               {children}
             </div>
           </motion.div>

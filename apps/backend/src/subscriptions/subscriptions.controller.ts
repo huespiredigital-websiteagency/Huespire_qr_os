@@ -24,7 +24,7 @@ export class SubscriptionsController {
   }
 
   @Get("me")
-  @Roles("SUPER_ADMIN", "OWNER", "MANAGER")
+  @Roles("SUPER_ADMIN", "OWNER", "MANAGER", "WAITER", "CASHIER", "KITCHEN")
   @ApiOperation({ summary: "Get subscription details for the current restaurant" })
   @ApiQuery({ name: "restaurantId", required: false, description: "Restaurant ID (Super Admin only)" })
   @ApiResponse({ status: 200, description: "Subscription details retrieved successfully" })

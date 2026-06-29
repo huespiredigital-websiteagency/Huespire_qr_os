@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { EventsGateway } from "../events/events.gateway";
 import { CartItemDto, ValidateCartDto } from "./dto/validate-cart.dto";
 import { CreateCustomerOrderDto } from "./dto/create-customer-order.dto";
 import { QRCode, Order } from "@prisma/client";
 
 @Injectable()
 export class CustomerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventsGateway: EventsGateway
+  ) {}
 
   async validateToken(token: string) {
     const qrCode = await this.prisma.qRCode.findUnique({
@@ -109,11 +113,30 @@ export class CustomerService {
       }
     });
 
-    // Addons are global, retrieve all active addons for the restaurant
-    const addons = await this.prisma.addon.findMany({
+    const allAddons = await this.prisma.addon.findMany({
       where: { restaurantId, isActive: true },
-      orderBy: { displayOrder: "asc" }
+      orderBy: { displayOrder: "asc" },
+      include: {
+        categoryAddons: { select: { categoryId: true } },
+        menuItemAddons: { select: { menuItemId: true } }
+      }
     });
+
+    const categoriesWithItemAddons = categories.map(cat => ({
+      ...cat,
+      menuItems: cat.menuItems.map(item => {
+        const applicableAddons = allAddons
+          .filter(a =>
+            a.menuItemAddons.some(ma => ma.menuItemId === item.id) ||
+            a.categoryAddons.some(ca => ca.categoryId === item.categoryId)
+          )
+          .map(({ categoryAddons, menuItemAddons, ...rest }) => rest);
+        return {
+          ...item,
+          addons: applicableAddons
+        };
+      })
+    }));
 
     // Find active table session
     const activeSession = await this.prisma.tableSession.findFirst({
@@ -146,8 +169,8 @@ export class CustomerService {
         totalAmount: Number(activeSession.totalAmount),
         openedAt: activeSession.openedAt,
       } : null,
-      categories,
-      addons
+      categories: categoriesWithItemAddons,
+      addons: allAddons.map(({ categoryAddons, menuItemAddons, ...rest }) => rest)
     };
   }
 
@@ -189,7 +212,7 @@ export class CustomerService {
     if (categoryId) {
       where.categoryId = categoryId;
     }
-    return this.prisma.menuItem.findMany({
+    const items = await this.prisma.menuItem.findMany({
       where,
       orderBy: { displayOrder: "asc" },
       include: {
@@ -197,6 +220,25 @@ export class CustomerService {
         variants: { where: { isAvailable: true }, orderBy: { displayOrder: "asc" } }
       }
     });
+
+    const allAddons = await this.prisma.addon.findMany({
+      where: { restaurantId, isActive: true },
+      orderBy: { displayOrder: "asc" },
+      include: {
+        categoryAddons: { select: { categoryId: true } },
+        menuItemAddons: { select: { menuItemId: true } }
+      }
+    });
+
+    return items.map(item => ({
+      ...item,
+      addons: allAddons
+        .filter(a =>
+          a.menuItemAddons.some(ma => ma.menuItemId === item.id) ||
+          a.categoryAddons.some(ca => ca.categoryId === item.categoryId)
+        )
+        .map(({ categoryAddons, menuItemAddons, ...rest }) => rest)
+    }));
   }
 
   async getMenuItem(token: string, id: string) {
@@ -213,7 +255,22 @@ export class CustomerService {
       throw new NotFoundException(`Menu item not found`);
     }
 
-    return item;
+    const applicableAddons = await this.prisma.addon.findMany({
+      where: {
+        restaurantId,
+        isActive: true,
+        OR: [
+          { menuItemAddons: { some: { menuItemId: id } } },
+          { categoryAddons: { some: { categoryId: item.categoryId } } }
+        ]
+      },
+      orderBy: { displayOrder: "asc" }
+    });
+
+    return {
+      ...item,
+      addons: applicableAddons
+    };
   }
 
   async validateCartInternal(restaurantId: string, items: CartItemDto[]) {
@@ -234,7 +291,13 @@ export class CustomerService {
         ? this.prisma.variant.findMany({ where: { id: { in: variantIds }, isAvailable: true } })
         : Promise.resolve([]),
       addonIds.length > 0
-        ? this.prisma.addon.findMany({ where: { id: { in: addonIds }, restaurantId, isActive: true } })
+        ? this.prisma.addon.findMany({
+            where: { id: { in: addonIds }, restaurantId, isActive: true },
+            include: {
+              categoryAddons: { select: { categoryId: true } },
+              menuItemAddons: { select: { menuItemId: true } }
+            }
+          })
         : Promise.resolve([])
     ]);
 
@@ -270,6 +333,12 @@ export class CustomerService {
           if (!addon) {
             throw new BadRequestException(`One or more addons are invalid or inactive`);
           }
+          const isDirect = addon.menuItemAddons.some(ma => ma.menuItemId === menuItem.id);
+          const isCategory = addon.categoryAddons.some(ca => ca.categoryId === menuItem.categoryId);
+          if (!isDirect && !isCategory) {
+            throw new BadRequestException(`Add-on ${addon.name} is not applicable to item ${menuItem.name}`);
+          }
+
           unitPriceWithAddons += Number(addon.additionalPrice);
           addonsList.push({
             id: addon.id,
@@ -447,7 +516,7 @@ export class CustomerService {
       return newOrder;
     });
 
-    return this.prisma.order.findUnique({
+    const fullOrder = await this.prisma.order.findUnique({
       where: { id: order.id },
       include: {
         orderItems: {
@@ -465,6 +534,18 @@ export class CustomerService {
         customer: true
       }
     });
+
+    if (fullOrder) {
+      this.eventsGateway.emitOrderCreated(
+        fullOrder.restaurantId,
+        fullOrder.branchId,
+        fullOrder.sessionId || "",
+        fullOrder.tableId,
+        fullOrder
+      );
+    }
+
+    return fullOrder;
   }
 
   async getOrder(id: string) {

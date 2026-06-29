@@ -2,8 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --text-primary: #0f172a; /* Slate 900 */
+  --text-secondary: #334155; /* Slate 700 */
+  --text-muted: #475569; /* Slate 600 - WCAG AA compliant */
+  --text-placeholder: #64748b; /* Slate 500 */
+  
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --border-subtle: #e2e8f0;
+}
+
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+    color: var(--text-primary);
+  }
+
+  /* Global Contrast Rules for Form Controls */
+  input, select, textarea {
+    @apply text-slate-900 bg-white border-slate-300;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--text-placeholder) !important;
+    opacity: 1 !important;
+  }
+
+  label {
+    @apply text-slate-800 font-semibold text-sm;
+  }
+
+  /* Global Table Header Accessibility */
+  th {
+    @apply text-slate-800 font-bold text-xs uppercase tracking-wider bg-slate-100/80;
+  }
+}
+
+/* Custom Accessibility Utilities */
+@layer utilities {
+  .text-muted-contrast {
+    color: var(--text-muted) !important;
+  }
+  .text-secondary-contrast {
+    color: var(--text-secondary) !important;
   }
 }

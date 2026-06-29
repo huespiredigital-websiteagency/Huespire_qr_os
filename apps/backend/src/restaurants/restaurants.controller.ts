@@ -15,7 +15,7 @@ export class RestaurantsController {
   constructor(private readonly restaurantsService: RestaurantsService) {}
 
   @Get("me")
-  @Roles("SUPER_ADMIN", "OWNER", "MANAGER")
+  @Roles("SUPER_ADMIN", "OWNER", "MANAGER", "WAITER", "CASHIER", "KITCHEN")
   @ApiOperation({ summary: "Retrieve current restaurant context settings" })
   @ApiQuery({ name: "restaurantId", required: false, description: "Restaurant ID to retrieve (Super Admin only)" })
   @ApiResponse({ status: 200, description: "Restaurant settings retrieved successfully" })
