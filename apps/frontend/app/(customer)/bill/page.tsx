@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCustomerStore } from "../../../lib/store/customer-store";
 import { getCustomerTableSession } from "../../../lib/api/customer";
+import { getSocket } from "../../../lib/socket";
 import Link from "next/link";
 
 export default function TableBillPage() {
@@ -12,31 +13,59 @@ export default function TableBillPage() {
 
   const restaurant = useCustomerStore((state) => state.restaurant);
   const table = useCustomerStore((state) => state.table);
+  const sessionId = useCustomerStore((state) => state.sessionId);
+  
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchSession = async () => {
     if (!token) return;
-
-    const fetchSession = async () => {
-      try {
-        setLoading(true);
-        const res = await getCustomerTableSession(token);
-        if (res.success && res.data) {
-          setSession(res.data);
-        } else {
-          setSession(null);
-        }
-      } catch (err: any) {
-        setError("Failed to retrieve current table session bill.");
-      } finally {
-        setLoading(false);
+    try {
+      const res = await getCustomerTableSession(token);
+      if (res.success && res.data) {
+        setSession(res.data);
+      } else {
+        setSession(null);
       }
-    };
+    } catch (err: any) {
+      setError("Failed to retrieve current table session bill.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSession();
   }, [token]);
+
+  // Real-time Socket.IO sync for multi-diner shared table billing
+  useEffect(() => {
+    const activeSessionId = session?.id || sessionId;
+    if (!activeSessionId) return;
+
+    const socket = getSocket(activeSessionId);
+    socket.emit("join.session", { sessionId: activeSessionId, tableId: table?.id });
+
+    const handleUpdate = () => {
+      console.log("[Socket.IO] Real-time table session bill update received");
+      fetchSession();
+    };
+
+    socket.on("order.created", handleUpdate);
+    socket.on("order.status.changed", handleUpdate);
+    socket.on("bill.updated", handleUpdate);
+    socket.on("payment.completed", handleUpdate);
+    socket.on("session.closed", handleUpdate);
+
+    return () => {
+      socket.off("order.created", handleUpdate);
+      socket.off("order.status.changed", handleUpdate);
+      socket.off("bill.updated", handleUpdate);
+      socket.off("payment.completed", handleUpdate);
+      socket.off("session.closed", handleUpdate);
+    };
+  }, [session?.id, sessionId, table?.id]);
 
   if (loading) {
     return (
@@ -88,11 +117,17 @@ export default function TableBillPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Title */}
-      <div className="border-b border-neutral-800/10 dark:border-neutral-800 pb-4">
-        <h1 className="text-2xl font-black">Table Bill</h1>
-        <p className={`text-xs ${isDark ? "text-neutral-400" : "text-neutral-500"} mt-0.5`}>
-          Consolidated open bill details for your entire table.
-        </p>
+      <div className="border-b border-neutral-800/10 dark:border-neutral-800 pb-4 flex justify-between items-end">
+        <div>
+          <h1 className="text-2xl font-black">Table Bill</h1>
+          <p className={`text-xs ${isDark ? "text-neutral-400" : "text-neutral-500"} mt-0.5`}>
+            Consolidated open bill details for your entire table.
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] text-emerald-400 font-bold">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          LIVE SYNC
+        </div>
       </div>
 
       {error && (
@@ -158,7 +193,7 @@ export default function TableBillPage() {
             isDark ? "bg-neutral-900/30 border-neutral-800" : "bg-white border-neutral-100 shadow-sm"
           }`}>
             <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800/10 dark:border-neutral-800 pb-2">
-              Aggregated Items (All Guests)
+              Aggregated Items (All Table Guests)
             </h3>
 
             <div className="space-y-3.5">
@@ -194,7 +229,7 @@ export default function TableBillPage() {
 
           {/* Privacy Disclaimer */}
           <div className="p-4 bg-neutral-950 border border-neutral-850/50 rounded-2xl text-[10px] text-neutral-500 text-center leading-normal">
-            🔒 Only showing consolidated billing totals. Individual guest names and specific item allocations are kept anonymous for privacy.
+            🔒 Real-time consolidated table billing. All guests scanning this QR code view live updated table orders.
           </div>
         </div>
       )}

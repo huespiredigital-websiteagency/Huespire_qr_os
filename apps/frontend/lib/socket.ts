@@ -4,7 +4,11 @@ let socket: Socket | null = null;
 
 export const getSocket = (sessionId?: string): Socket => {
   if (!socket || !socket.connected) {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+    const backendUrl =
+      process.env.NEXT_PUBLIC_SOCKET_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      process.env.NEXT_PUBLIC_BACKEND_URL ||
+      "http://localhost:5000";
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
     socket = io(backendUrl, {
