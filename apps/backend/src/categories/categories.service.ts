@@ -19,7 +19,7 @@ export class CategoriesService {
 
   async findAll(restaurantId: string, paginationDto?: PaginationDto): Promise<PaginatedResult<any>> {
     const page = Number(paginationDto?.page) || 1;
-    const limit = Number(paginationDto?.limit) || 10;
+    const limit = paginationDto?.limit ? Number(paginationDto.limit) : 1000;
     const skip = (page - 1) * limit;
 
     const sortBy = paginationDto?.sortBy || "displayOrder";

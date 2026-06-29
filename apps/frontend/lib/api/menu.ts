@@ -14,7 +14,7 @@ export const getAuthHeaders = () => {
 
 // Categories
 export const getCategories = async () => {
-  const res = await axios.get(`${API_URL}/categories`, { headers: getAuthHeaders() });
+  const res = await axios.get(`${API_URL}/categories?limit=1000`, { headers: getAuthHeaders() });
   return res.data;
 };
 
@@ -35,7 +35,7 @@ export const deleteCategory = async (id: string) => {
 
 // Menu Items
 export const getMenuItems = async (categoryId?: string) => {
-  const url = categoryId ? `${API_URL}/menu-items?categoryId=${categoryId}` : `${API_URL}/menu-items`;
+  const url = categoryId ? `${API_URL}/menu-items?limit=1000&categoryId=${categoryId}` : `${API_URL}/menu-items?limit=1000`;
   const res = await axios.get(url, { headers: getAuthHeaders() });
   return res.data;
 };
