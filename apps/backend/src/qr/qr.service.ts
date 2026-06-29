@@ -11,7 +11,7 @@ export class QRService {
   private getRedirectionUrl(subdomain: string, token: string): string {
     const appUrl = process.env.APP_URL || "http://localhost:3000";
     const baseHost = appUrl.replace(/^https?:\/\//, "");
-    if (baseHost.includes("localhost") || baseHost.includes("127.0.0.1") || baseHost.includes("nip.io")) {
+    if (baseHost.includes("localhost") || baseHost.includes("127.0.0.1") || baseHost.includes("nip.io") || /^\d+\.\d+\.\d+\.\d+/.test(baseHost)) {
       return `http://${baseHost}/qr/${token}`;
     }
     return `http://${subdomain}.${baseHost}/qr/${token}`;
