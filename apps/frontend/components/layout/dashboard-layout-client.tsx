@@ -28,7 +28,6 @@ export const DashboardLayoutClient: React.FC<{ children: React.ReactNode }> = ({
   const getHeaderTitle = () => {
     if (pathname === "/dashboard") return "Dashboard Overview";
     if (pathname.startsWith("/dashboard/settings")) return "Restaurant Settings";
-    if (pathname.startsWith("/dashboard/branches")) return "Branch Locations";
     if (pathname.startsWith("/dashboard/staff")) return "Staff Members";
     if (pathname.startsWith("/dashboard/subscription")) return "SaaS Subscription";
     if (pathname.startsWith("/dashboard/plans")) return "Platform Plans";
@@ -56,7 +55,6 @@ export const DashboardLayoutClient: React.FC<{ children: React.ReactNode }> = ({
     if (path.startsWith("/dashboard/plans")) return ["SUPER_ADMIN"];
     if (path.startsWith("/dashboard/subscription")) return ["SUPER_ADMIN", "OWNER"];
     if (path.startsWith("/dashboard/settings")) return ["SUPER_ADMIN", "OWNER", "MANAGER"];
-    if (path.startsWith("/dashboard/branches")) return ["SUPER_ADMIN", "OWNER", "MANAGER"];
     if (path.startsWith("/dashboard/staff")) return ["SUPER_ADMIN", "OWNER", "MANAGER"];
     return null;
   };

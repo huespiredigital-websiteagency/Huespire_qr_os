@@ -6,7 +6,6 @@ import { useUIStore } from "../../lib/store/ui-store";
 import {
   LayoutDashboard,
   Store,
-  GitBranch,
   Users,
   CreditCard,
   Settings,
@@ -70,12 +69,6 @@ export const Sidebar: React.FC = () => {
       name: "Restaurant",
       href: "/dashboard/settings", // Redirects or displays settings
       icon: Store,
-      roles: ["SUPER_ADMIN", "OWNER", "MANAGER"],
-    },
-    {
-      name: "Branches",
-      href: "/dashboard/branches",
-      icon: GitBranch,
       roles: ["SUPER_ADMIN", "OWNER", "MANAGER"],
     },
     {

@@ -4,10 +4,6 @@ import { OrderStatus } from "@prisma/client";
 export class FilterKitchenOrdersDto {
   @IsOptional()
   @IsString()
-  branchId?: string;
-
-  @IsOptional()
-  @IsString()
   tableId?: string;
 
   @IsOptional()

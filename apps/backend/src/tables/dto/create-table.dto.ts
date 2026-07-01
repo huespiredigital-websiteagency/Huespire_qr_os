@@ -11,9 +11,6 @@ export class CreateTableDto {
   @Min(1)
   tableNumber: number;
 
-  @ApiProperty({ description: "Assigned Branch ID", example: "uuid" })
-  @IsUUID()
-  branchId: string;
 
   @ApiProperty({ description: "Seating Capacity", example: 4, required: false })
   @IsOptional()

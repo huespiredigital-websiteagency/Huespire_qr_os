@@ -29,7 +29,6 @@ export default function PlansPage() {
   const [setupFee, setSetupFee] = useState("0");
   const [monthlyPrice, setMonthlyPrice] = useState("0");
   const [maxTables, setMaxTables] = useState("20");
-  const [maxBranches, setMaxBranches] = useState("1");
   const [maxStaff, setMaxStaff] = useState("5");
   const [monthlyEmailLimit, setMonthlyEmailLimit] = useState("1000");
   const [customDomain, setCustomDomain] = useState(false);
@@ -76,9 +75,6 @@ export default function PlansPage() {
     if (isNaN(Number(maxTables)) || Number(maxTables) < 1) {
       tempErrors.maxTables = "Max tables must be at least 1";
     }
-    if (isNaN(Number(maxBranches)) || Number(maxBranches) < 1) {
-      tempErrors.maxBranches = "Max branches must be at least 1";
-    }
     if (isNaN(Number(maxStaff)) || Number(maxStaff) < 1) {
       tempErrors.maxStaff = "Max staff must be at least 1";
     }
@@ -98,7 +94,6 @@ export default function PlansPage() {
     setSetupFee("0");
     setMonthlyPrice("0");
     setMaxTables("20");
-    setMaxBranches("1");
     setMaxStaff("5");
     setMonthlyEmailLimit("1000");
     setCustomDomain(false);
@@ -116,7 +111,6 @@ export default function PlansPage() {
     setSetupFee(String(plan.setupFee || 0));
     setMonthlyPrice(String(plan.monthlyPrice || 0));
     setMaxTables(String(plan.maxTables || 20));
-    setMaxBranches(String(plan.maxBranches || 1));
     setMaxStaff(String(plan.maxStaff || 5));
     setMonthlyEmailLimit(String(plan.monthlyEmailLimit || 1000));
     setCustomDomain(plan.customDomain || false);
@@ -142,7 +136,6 @@ export default function PlansPage() {
       setupFee: Number(setupFee),
       monthlyPrice: Number(monthlyPrice),
       maxTables: Number(maxTables),
-      maxBranches: Number(maxBranches),
       maxStaff: Number(maxStaff),
       monthlyEmailLimit: Number(monthlyEmailLimit),
       customDomain,
@@ -288,10 +281,6 @@ export default function PlansPage() {
                       <span className="font-semibold text-slate-800">₹{setupFee.toLocaleString("en-IN")}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Max Branches:</span>
-                      <span className="font-semibold text-slate-800">{p.maxBranches >= 999999 ? "Unlimited" : p.maxBranches}</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-slate-500">Max Staff Accounts:</span>
                       <span className="font-semibold text-slate-800">{p.maxStaff >= 999999 ? "Unlimited" : p.maxStaff}</span>
                     </div>
@@ -393,13 +382,6 @@ export default function PlansPage() {
               value={setupFee}
               onChange={(e) => setSetupFee(e.target.value)}
               error={errors.setupFee}
-            />
-            <Input
-              label="Max Branches *"
-              type="number"
-              value={maxBranches}
-              onChange={(e) => setMaxBranches(e.target.value)}
-              error={errors.maxBranches}
             />
             <Input
               label="Max Staff Accounts *"

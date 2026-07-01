@@ -19,13 +19,11 @@ export class TablesController {
   @Get()
   @Roles("SUPER_ADMIN", "OWNER", "MANAGER", "WAITER", "CASHIER")
   @ApiOperation({ summary: "Get all tables of the restaurant" })
-  @ApiQuery({ name: "branchId", required: false, description: "Filter tables by Branch ID" })
   async findAll(
     @CurrentUser() user: any,
     @Query() paginationDto: PaginationDto,
-    @Query("branchId") branchId?: string,
   ) {
-    const paginated = await this.tablesService.findAll(user.restaurantId, paginationDto, branchId);
+    const paginated = await this.tablesService.findAll(user.restaurantId, paginationDto);
     return {
       success: true,
       message: "Tables retrieved successfully",

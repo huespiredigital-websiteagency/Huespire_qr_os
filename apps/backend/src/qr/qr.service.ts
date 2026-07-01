@@ -17,7 +17,7 @@ export class QRService {
     return `http://${subdomain}.${baseHost}/qr/${token}`;
   }
 
-  async generate(restaurantId: string, branchId: string, tableId: string): Promise<QRCode> {
+  async generate(restaurantId: string, tableId: string): Promise<QRCode> {
     const restaurant = await this.prisma.restaurant.findUnique({
       where: { id: restaurantId },
     });
@@ -32,7 +32,6 @@ export class QRService {
     return this.prisma.qRCode.create({
       data: {
         restaurantId,
-        branchId,
         tableId,
         qrToken: token,
         qrPath: `/qr/${token}.png`,
@@ -82,11 +81,7 @@ export class QRService {
       include: {
         table: {
           include: {
-            branch: {
-              include: {
-                restaurant: true,
-              },
-            },
+            restaurant: true,
           },
         },
       },
@@ -101,12 +96,7 @@ export class QRService {
       throw new BadRequestException("Table Unavailable");
     }
 
-    const branch = table.branch;
-    if (!branch || !branch.isActive || branch.deletedAt) {
-      throw new BadRequestException("Table Unavailable (Branch Inactive)");
-    }
-
-    const restaurant = branch.restaurant;
+    const restaurant = table.restaurant;
     if (!restaurant || !restaurant.isActive || restaurant.deletedAt) {
       throw new BadRequestException("Table Unavailable (Restaurant Inactive)");
     }
@@ -127,8 +117,6 @@ export class QRService {
       tableName: table.tableName,
       tableNumber: table.tableNumber,
       seatingCapacity: table.seatingCapacity,
-      branchId: branch.id,
-      branchName: branch.name,
       restaurantId: restaurant.id,
       restaurantName: restaurant.name,
       subdomain: restaurant.subdomain,
@@ -141,11 +129,7 @@ export class QRService {
       where: { qrToken: token },
       include: {
         table: {
-          include: {
-            branch: {
-              include: { restaurant: true }
-            }
-          }
+          include: { restaurant: true }
         }
       }
     });
@@ -155,7 +139,7 @@ export class QRService {
     }
 
     // Reconstruct the redirection URL dynamically to adapt to changing network IPs
-    const restaurant = qrCode.table?.branch?.restaurant;
+    const restaurant = qrCode.table?.restaurant;
     let redirectUrl = qrCode.qrUrl;
     
     if (restaurant) {
@@ -180,7 +164,6 @@ export class QRService {
       where: { restaurantId },
       include: {
         table: true,
-        branch: true,
       },
     });
   }
@@ -189,7 +172,6 @@ export class QRService {
     base64: string;
     tableName: string;
     tableNumber: number;
-    branchName: string;
     restaurantName: string;
     scanUrl: string;
   }> {
@@ -197,11 +179,7 @@ export class QRService {
       where: { qrToken: token },
       include: {
         table: {
-          include: {
-            branch: {
-              include: { restaurant: true },
-            },
-          },
+          include: { restaurant: true },
         },
       },
     });
@@ -211,8 +189,7 @@ export class QRService {
     }
 
     const table = qrCode.table;
-    const branch = table?.branch;
-    const restaurant = branch?.restaurant;
+    const restaurant = table?.restaurant;
 
     const scanUrl = `http://${host}/qr/scan/${token}`;
     const buffer = await (QRCodeLib as any).toBuffer(scanUrl, {
@@ -225,7 +202,6 @@ export class QRService {
       base64: buffer.toString("base64"),
       tableName: table?.tableName || "Unknown",
       tableNumber: table?.tableNumber || 0,
-      branchName: branch?.name || "Unknown",
       restaurantName: restaurant?.name || "Unknown",
       scanUrl,
     };

@@ -16,7 +16,7 @@ export class TablesService {
     private readonly qrService: QRService,
   ) {}
 
-  async findAll(restaurantId: string, paginationDto?: PaginationDto, branchId?: string): Promise<PaginatedResult<Table>> {
+  async findAll(restaurantId: string, paginationDto?: PaginationDto): Promise<PaginatedResult<Table>> {
     const page = Number(paginationDto?.page) || 1;
     const limit = Number(paginationDto?.limit) || 10;
     const skip = (page - 1) * limit;
@@ -27,7 +27,6 @@ export class TablesService {
     const where = {
       restaurantId,
       deletedAt: null,
-      ...(branchId ? { branchId } : {}),
     };
 
     const [total, data] = await Promise.all([
@@ -39,7 +38,6 @@ export class TablesService {
         orderBy: { [sortBy]: sortOrder },
         include: {
           qrCode: true,
-          branch: true,
         }
       })
     ]);
@@ -58,7 +56,7 @@ export class TablesService {
   async findOne(restaurantId: string, id: string): Promise<Table> {
     const table = await this.prisma.table.findFirst({
       where: { id, restaurantId, deletedAt: null },
-      include: { qrCode: true, branch: true },
+      include: { qrCode: true },
     });
 
     if (!table) {
@@ -69,25 +67,16 @@ export class TablesService {
   }
 
   async create(restaurantId: string, dto: CreateTableDto): Promise<Table> {
-    // 1. Validate branch exists and belongs to tenant
-    const branch = await this.prisma.branch.findFirst({
-      where: { id: dto.branchId, restaurantId, deletedAt: null },
-    });
-
-    if (!branch) {
-      throw new NotFoundException("Branch not found");
-    }
-
-    // 2. Validate subscription table limit
+    // 1. Validate subscription table limit
     const quota = await this.subscriptionsService.hasQuota(restaurantId, "tables");
     if (!quota.allowed) {
       throw new ForbiddenException(`Table limit reached (${quota.max}). Please upgrade your subscription plan.`);
     }
 
-    // 3. Check table number uniqueness in the branch
+    // 2. Check table number uniqueness in the restaurant
     const existing = await this.prisma.table.findFirst({
       where: {
-        branchId: dto.branchId,
+        restaurantId,
         tableNumber: dto.tableNumber,
       },
       include: {
@@ -97,19 +86,41 @@ export class TablesService {
 
     if (existing) {
       if (!existing.deletedAt) {
-        throw new ConflictException("A table with this number already exists in this branch.");
+        throw new ConflictException("A table with this number already exists.");
       } else {
-        // Clean up conflicting soft-deleted table and its QR code
-        await this.prisma.qRCode.deleteMany({ where: { tableId: existing.id } });
-        await this.prisma.table.delete({ where: { id: existing.id } });
+        // Table exists but is soft-deleted. Restore and update it instead of deleting it to avoid FK constraint violations
+        if (existing.qrCode) {
+          await this.prisma.qRCode.update({
+            where: { id: existing.qrCode.id },
+            data: { isActive: true },
+          });
+        } else {
+          const qr = await this.qrService.generate(restaurantId, existing.id);
+          await this.prisma.table.update({
+            where: { id: existing.id },
+            data: { qrCodeId: qr.id },
+          });
+        }
+
+        return this.prisma.table.update({
+          where: { id: existing.id },
+          data: {
+            tableName: dto.tableName,
+            seatingCapacity: dto.seatingCapacity ?? 4,
+            notes: dto.notes ?? null,
+            status: "AVAILABLE",
+            isActive: true,
+            deletedAt: null,
+          },
+          include: { qrCode: true },
+        });
       }
     }
 
-    // 4. Create Table
+    // 3. Create Table
     const table = await this.prisma.table.create({
       data: {
         restaurantId,
-        branchId: dto.branchId,
         tableName: dto.tableName,
         tableNumber: dto.tableNumber,
         seatingCapacity: dto.seatingCapacity ?? 4,
@@ -119,14 +130,14 @@ export class TablesService {
       },
     });
 
-    // 5. Generate QR Code
-    const qr = await this.qrService.generate(restaurantId, dto.branchId, table.id);
+    // 4. Generate QR Code
+    const qr = await this.qrService.generate(restaurantId, table.id);
 
-    // 6. Connect QR ID back to table
+    // 5. Connect QR ID back to table
     return this.prisma.table.update({
       where: { id: table.id },
       data: { qrCodeId: qr.id },
-      include: { qrCode: true, branch: true },
+      include: { qrCode: true },
     });
   }
 
@@ -150,7 +161,7 @@ export class TablesService {
     const updated = await this.prisma.table.update({
       where: { id },
       data: updateData,
-      include: { qrCode: true, branch: true },
+      include: { qrCode: true },
     });
 
     // Sync QR active state if table active state changed

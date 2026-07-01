@@ -7,7 +7,6 @@ import { useAuthStore } from "../../../lib/store/auth-store";
 import { useUIStore } from "../../../lib/store/ui-store";
 import {
   Store,
-  GitBranch,
   Users,
   CreditCard,
   Plus,
@@ -26,7 +25,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [restaurant, setRestaurant] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
-  const [branchesCount, setBranchesCount] = useState(0);
   const [staffCount, setStaffCount] = useState(0);
 
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
@@ -41,16 +39,14 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         // Execute fetches in parallel
-        const [restRes, subRes, branchRes, staffRes] = await Promise.allSettled([
+        const [restRes, subRes, staffRes] = await Promise.allSettled([
           apiClient.get("/restaurants/me"),
           apiClient.get("/subscriptions/me"),
-          apiClient.get("/branches"),
           apiClient.get("/staff"),
         ]);
 
         if (restRes.status === "fulfilled" && restRes.value.data?.success) setRestaurant(restRes.value.data.data);
         if (subRes.status === "fulfilled" && subRes.value.data?.success) setSubscription(subRes.value.data.data);
-        if (branchRes.status === "fulfilled" && branchRes.value.data?.success) setBranchesCount(branchRes.value.data.data.length);
         if (staffRes.status === "fulfilled" && staffRes.value.data?.success) setStaffCount(staffRes.value.data.data.length);
       } catch (err: any) {
         console.error("Failed to load dashboard statistics:", err);
@@ -141,7 +137,6 @@ export default function DashboardPage() {
 
   // 2. Tenant Dashboard view (Owner/Manager/Staff)
   const activePlanName = subscription?.plan?.name || "No Plan";
-  const limitBranches = subscription?.maxBranches || 0;
   const limitStaff = subscription?.maxStaff || 0;
 
   return (
@@ -156,13 +151,13 @@ export default function DashboardPage() {
             Welcome Back, {user?.firstName}!
           </h2>
           <p className="text-slate-200 text-sm sm:text-base font-medium">
-            You are managing <span className="text-white font-extrabold">{restaurant?.name || "your restaurant"}</span>. Access quick actions, configure branches, onboard staff members, or inspect subscription metrics below.
+            You are managing <span className="text-white font-extrabold">{restaurant?.name || "your restaurant"}</span>. Access quick actions, onboard staff members, or inspect subscription metrics below.
           </p>
         </div>
       </div>
 
       {/* Quick Statistics Row */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {/* Restaurant Card */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
           <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
@@ -184,19 +179,6 @@ export default function DashboardPage() {
           <div>
             <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Current Plan</p>
             <p className="text-sm font-extrabold text-slate-900">{activePlanName}</p>
-          </div>
-        </div>
-
-        {/* Branches Card */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-            <GitBranch className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Branches</p>
-            <p className="text-sm font-extrabold text-slate-900">
-              {branchesCount} <span className="text-xs text-slate-600 font-semibold">/ {limitBranches}</span>
-            </p>
           </div>
         </div>
 
@@ -249,14 +231,7 @@ export default function DashboardPage() {
           {/* Quick Actions Panel */}
           <div className="pt-4 border-t border-slate-100 space-y-4">
             <h4 className="text-sm font-bold text-slate-900">Quick Actions</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Link
-                href="/dashboard/branches"
-                className="flex items-center justify-center px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition text-sm font-semibold text-slate-700 space-x-2"
-              >
-                <Plus className="h-4 w-4 text-slate-500" />
-                <span>Add Branch</span>
-              </Link>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Link
                 href="/dashboard/staff"
                 className="flex items-center justify-center px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition text-sm font-semibold text-slate-700 space-x-2"

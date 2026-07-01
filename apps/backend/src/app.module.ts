@@ -5,7 +5,6 @@ import { AuthModule } from "./auth/auth.module";
 import { PlansModule } from "./plans/plans.module";
 import { SubscriptionModule } from "./subscriptions/subscriptions.module";
 import { RestaurantsModule } from "./restaurants/restaurants.module";
-import { BranchesModule } from "./branches/branches.module";
 import { RolesModule } from "./roles/roles.module";
 import { StaffModule } from "./staff/staff.module";
 import { UsersModule } from "./users/users.module";
@@ -34,7 +33,6 @@ import { EventsModule } from "./events/events.module";
     PlansModule,
     SubscriptionModule,
     RestaurantsModule,
-    BranchesModule,
     RolesModule,
     StaffModule,
     UsersModule,

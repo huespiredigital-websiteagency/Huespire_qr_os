@@ -10,17 +10,14 @@ export class WaiterService {
     private readonly eventsGateway: EventsGateway
   ) {}
 
-  async getWaiterOrders(restaurantId: string, branchId?: string) {
+  async getWaiterOrders(restaurantId: string) {
     const where: any = { restaurantId };
-    if (branchId) where.branchId = branchId;
-
     where.orderStatus = { in: [OrderStatus.READY, OrderStatus.SERVED] };
 
     const ordersRaw = await this.prisma.order.findMany({
       where,
       include: {
         table: true,
-        branch: true,
         customer: true,
         session: true,
         orderItems: {
@@ -109,7 +106,6 @@ export class WaiterService {
 
     this.eventsGateway.emitOrderStatusChanged(
       order.restaurantId,
-      order.branchId,
       order.sessionId || "",
       order.tableId,
       updated.id,
@@ -141,7 +137,6 @@ export class WaiterService {
 
     this.eventsGateway.emitOrderStatusChanged(
       order.restaurantId,
-      order.branchId,
       order.sessionId || "",
       order.tableId,
       updated.id,

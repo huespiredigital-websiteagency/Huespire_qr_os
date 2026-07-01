@@ -5,6 +5,17 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useCustomerStore } from "../../../lib/store/customer-store";
 import { validateCustomerCart, createCustomerOrder } from "../../../lib/api/customer";
 import Link from "next/link";
+import {
+  User,
+  Phone,
+  MessageSquare,
+  Clock,
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  ShieldCheck,
+  AlertTriangle,
+} from "lucide-react";
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
@@ -19,8 +30,7 @@ export default function CheckoutPage() {
   const guestName = useCustomerStore((state) => state.guestName);
   const guestPhone = useCustomerStore((state) => state.guestPhone);
   const currency = restaurant?.currency || "INR";
-  const theme = restaurant?.theme || "dark";
-  const isDark = theme === "dark";
+  const theme = restaurant?.theme || "light";
 
   // Form states
   const [customerName, setCustomerName] = useState("");
@@ -153,152 +163,212 @@ export default function CheckoutPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 animate-pulse">
-        <div className="h-8 w-1/3 bg-neutral-800 rounded"></div>
-        <div className="h-24 w-full bg-neutral-800 rounded-2xl"></div>
-        <div className="h-36 w-full bg-neutral-800 rounded-2xl"></div>
-        <div className="h-14 w-full bg-neutral-800 rounded-xl"></div>
+      <div className="min-h-screen bg-[#faf9f6] p-5 space-y-5 animate-pulse">
+        <div className="h-6 w-1/3 bg-slate-200/60 rounded-lg"></div>
+        <div className="h-28 w-full bg-white border border-neutral-100 rounded-3xl"></div>
+        <div className="h-40 w-full bg-white border border-neutral-100 rounded-3xl"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Title */}
-      <div className="border-b border-neutral-800/10 dark:border-neutral-800 pb-4">
-        <h1 className="text-2xl font-black">Checkout</h1>
-        <p className={`text-xs ${isDark ? "text-neutral-400" : "text-neutral-500"} mt-0.5`}>
-          Table {table?.tableNumber || ""} · {table?.tableName || ""}
-        </p>
+    <div className="min-h-screen bg-[#faf9f6] text-slate-800 font-sans pb-12">
+      {/* Header */}
+      <div className="sticky top-0 z-30 backdrop-blur-xl bg-[#faf9f6]/90 border-b border-black/[0.03]">
+        <div className="px-4 py-4 flex items-center gap-3">
+          <Link
+            href={`/cart?token=${token}`}
+            className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center transition-all duration-200 active:scale-[0.97] shadow-sm"
+          >
+            <ArrowLeft className="w-[18px] h-[18px] text-slate-500" />
+          </Link>
+          <div className="flex-1">
+            <h1 className="text-base font-black text-slate-800 tracking-tight">Checkout</h1>
+            <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">
+              Table {table?.tableNumber || ""} · {table?.tableName || ""}
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-[#0f5132]/8 flex items-center justify-center">
+            <ShieldCheck className="w-[18px] h-[18px] text-[#0f5132]" />
+          </div>
+        </div>
       </div>
 
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-xs">
-          ⚠️ {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Customer Info (Optional) */}
-        {guestId ? (
-          <div className={`p-5 rounded-2xl border ${
-            isDark ? "bg-neutral-900/40 border-neutral-800" : "bg-neutral-50 border-neutral-100"
-          }`}>
-            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Ordering As</span>
-            <div className="text-sm font-extrabold text-white mt-1">{customerName}</div>
-            <div className="text-xs text-neutral-400 mt-0.5">{customerPhone}</div>
+      <div className="p-4 space-y-5 animate-fade-up">
+        {/* Error */}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-red-600 leading-relaxed font-semibold">{error}</p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-500">Contact Details (Optional)</h3>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-neutral-400 mb-1.5">Your Name</label>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Guest Info Card */}
+          {guestId ? (
+            <div className="bg-white rounded-3xl border border-neutral-100 p-5 shadow-[0_6px_20px_rgba(0,0,0,0.01)]">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-full bg-[#0f5132]/8 flex items-center justify-center flex-shrink-0">
+                  <User className="w-5 h-5 text-[#0f5132]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                    Ordering As
+                  </span>
+                  <div className="text-sm font-bold text-slate-800 mt-0.5 truncate">{customerName}</div>
+                  <div className="text-xs text-slate-400 mt-0.5 truncate">{customerPhone}</div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl border border-neutral-100 p-5 space-y-4 shadow-[0_6px_20px_rgba(0,0,0,0.01)]">
+              {/* Section Header */}
+              <div className="flex items-center gap-2.5 pb-2 border-b border-neutral-50">
+                <div className="w-8 h-8 rounded-full bg-[#0f5132]/8 flex items-center justify-center text-[#0f5132]">
+                  <User className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-800">Contact Details</h3>
+                  <p className="text-[10px] text-slate-400 font-semibold">Optional info for session bill tracking</p>
+                </div>
+              </div>
+
+              {/* Name Input */}
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                  Your Name
+                </label>
                 <input
                   type="text"
                   placeholder="E.g., John Doe"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className={`w-full p-3.5 text-sm rounded-xl border focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all ${
-                    isDark
-                      ? "bg-neutral-850 border-neutral-800 text-white placeholder-neutral-600 focus:border-amber-500"
-                      : "bg-neutral-50 border-neutral-200 text-neutral-900 placeholder-neutral-400 focus:border-amber-500"
-                  }`}
+                  className="w-full bg-white border border-neutral-200 rounded-xl p-3 text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:border-[#0f5132] focus:ring-1 focus:ring-[#0f5132]/20 transition-all duration-200"
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-neutral-400 mb-1.5">Phone Number</label>
+              {/* Phone Input */}
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                  Phone Number
+                </label>
                 <input
                   type="tel"
                   placeholder="E.g., +919876543210"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  className={`w-full p-3.5 text-sm rounded-xl border focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all ${
-                    isDark
-                      ? "bg-neutral-850 border-neutral-800 text-white placeholder-neutral-600 focus:border-amber-500"
-                      : "bg-neutral-50 border-neutral-200 text-neutral-900 placeholder-neutral-400 focus:border-amber-500"
-                  }`}
+                  className="w-full bg-white border border-neutral-200 rounded-xl p-3 text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:border-[#0f5132] focus:ring-1 focus:ring-[#0f5132]/20 transition-all duration-200"
                 />
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Order Notes */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-amber-500">Order Notes</h3>
-          <textarea
-            rows={2}
-            placeholder="Special instructions for this entire order..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className={`w-full p-3.5 text-sm rounded-xl border focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all ${
-              isDark
-                ? "bg-neutral-850 border-neutral-800 text-white placeholder-neutral-600 focus:border-amber-500"
-                : "bg-neutral-50 border-neutral-200 text-neutral-900 placeholder-neutral-400 focus:border-amber-500"
-            }`}
-          />
-        </div>
-
-        {/* Estimated Time Info */}
-        <div className={`p-4 rounded-2xl border flex items-center gap-3.5 ${
-          isDark ? "bg-amber-500/5 border-amber-500/10" : "bg-amber-500/5 border-amber-550/10"
-        }`}>
-          <span className="text-2xl">⏱️</span>
-          <div>
-            <div className="text-xs font-bold text-amber-500 uppercase tracking-wider">Estimated Wait Time</div>
-            <div className="text-sm font-semibold mt-0.5">Ready in approximately {estimatedPrepTime} mins</div>
-          </div>
-        </div>
-
-        {/* Order Breakdown */}
-        {validatedData && (
-          <div className={`p-5 rounded-2xl border space-y-3 ${
-            isDark ? "bg-neutral-900/50 border-neutral-800" : "bg-neutral-50 border-neutral-100"
-          }`}>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800/10 dark:border-neutral-800 pb-2">
-              Payment Summary
-            </h3>
-            
-            <div className="flex justify-between text-xs">
-              <span className="text-neutral-400">Subtotal</span>
-              <span>{currency} {Number(validatedData.subtotal).toFixed(2)}</span>
+          {/* Order Notes Card */}
+          <div className="bg-white rounded-3xl border border-neutral-100 p-5 space-y-3.5 shadow-[0_6px_20px_rgba(0,0,0,0.01)]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#0f5132]/8 flex items-center justify-center text-[#0f5132]">
+                <MessageSquare className="w-4.5 h-4.5" />
+              </div>
+              <h3 className="text-xs font-bold text-slate-800">Order Notes</h3>
             </div>
-            
-            <div className="flex justify-between text-xs">
-              <span className="text-neutral-400">GST / Taxes</span>
-              <span>{currency} {Number(validatedData.tax).toFixed(2)}</span>
-            </div>
+            <textarea
+              rows={2}
+              placeholder="E.g., Make it extra spicy, serve drinks first..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full bg-white border border-neutral-200 rounded-xl p-3 text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:border-[#0f5132] focus:ring-1 focus:ring-[#0f5132]/20 transition-all duration-200 resize-none"
+            />
+          </div>
 
-            <div className="flex justify-between text-sm font-extrabold border-t border-neutral-850 dark:border-neutral-800 pt-3">
-              <span>Grand Total</span>
-              <span className="text-amber-500">{currency} {Number(validatedData.grandTotal).toFixed(2)}</span>
+          {/* Estimated Time Card */}
+          <div className="bg-white rounded-3xl border border-[#0f5132]/10 p-5 flex items-center gap-4 shadow-[0_6px_20px_rgba(0,0,0,0.015)]">
+            <div className="w-11 h-11 rounded-full bg-[#0f5132]/8 flex items-center justify-center flex-shrink-0 text-[#0f5132]">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <div className="text-[9px] font-extrabold text-[#0f5132] uppercase tracking-wider">
+                Estimated Wait Time
+              </div>
+              <div className="text-sm font-bold text-slate-700 mt-0.5">
+                Ready in ~ {estimatedPrepTime} mins
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Action Button */}
-        <button
-          type="submit"
-          disabled={submitting || !validatedData}
-          className={`w-full py-4 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-extrabold text-base rounded-2xl transition-all shadow-lg shadow-amber-500/10 ${
-            submitting || !validatedData ? "opacity-50 pointer-events-none" : "hover:scale-[1.01] active:scale-95"
-          }`}
-        >
-          {submitting ? "Placing Order..." : `Place Table Order`}
-        </button>
+          {/* Payment Summary */}
+          {validatedData && (
+            <div className="bg-white rounded-3xl border border-neutral-100 overflow-hidden shadow-[0_6px_20px_rgba(0,0,0,0.015)]">
+              {/* Summary Header */}
+              <div className="px-5 py-3 border-b border-neutral-50 bg-slate-50/20">
+                <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                  Payment Summary
+                </h3>
+              </div>
 
-        <Link
-          href={`/cart?token=${token}`}
-          className={`w-full py-4 text-center text-xs font-bold rounded-2xl block transition-all ${
-            isDark ? "bg-neutral-900 border border-neutral-800 text-neutral-400 hover:bg-neutral-800" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-550"
-          }`}
-        >
-          ← Edit Cart
-        </Link>
-      </form>
+              {/* Summary Rows */}
+              <div className="px-5 py-4 space-y-3 border-b border-neutral-100">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400 font-medium">Subtotal</span>
+                  <span className="text-slate-700 font-bold tabular-nums">
+                    {currency} {Number(validatedData.subtotal).toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400 font-medium">GST / Taxes</span>
+                  <span className="text-slate-700 font-bold tabular-nums">
+                    {currency} {Number(validatedData.tax).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Grand Total */}
+              <div className="px-5 py-4 bg-slate-50/30">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-black text-slate-800">Grand Total</span>
+                  <span className="text-base font-black text-[#0f5132] tabular-nums">
+                    {currency} {Number(validatedData.grandTotal).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Place Order Button */}
+          <div className="pt-2 space-y-3">
+            <button
+              type="submit"
+              disabled={submitting || !validatedData}
+              className={`w-full py-4 bg-[#0f5132] hover:bg-[#0d472c] text-white font-extrabold text-sm rounded-2xl transition-all duration-200 shadow-md shadow-[#0f5132]/10 flex items-center justify-center gap-2 ${
+                submitting || !validatedData
+                  ? "opacity-50 pointer-events-none"
+                  : "active:scale-[0.97]"
+              }`}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Placing Order...</span>
+                </>
+              ) : (
+                <>
+                  <span>Place Table Order</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+
+            {/* Edit Cart Link */}
+            <Link
+              href={`/cart?token=${token}`}
+              className="w-full py-3.5 bg-white border border-neutral-200 text-slate-500 hover:bg-slate-50 font-bold text-xs rounded-2xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.97]"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Cart</span>
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

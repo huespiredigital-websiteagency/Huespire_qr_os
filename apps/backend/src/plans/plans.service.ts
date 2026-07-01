@@ -19,7 +19,6 @@ export class PlansService {
         setupFee: createPlanDto.setupFee,
         monthlyPrice: createPlanDto.monthlyPrice,
         maxTables: createPlanDto.maxTables,
-        maxBranches: createPlanDto.maxBranches,
         maxStaff: createPlanDto.maxStaff,
         monthlyEmailLimit: createPlanDto.monthlyEmailLimit,
         customDomain: createPlanDto.customDomain,

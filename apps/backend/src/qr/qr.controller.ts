@@ -140,7 +140,7 @@ export class QRController {
       <img src="data:image/png;base64,${result.base64}" alt="QR Code" />
     </div>
     <p class="info"><span>${result.restaurantName}</span> — Table ${result.tableNumber}</p>
-    <p class="hint">${result.branchName} · ${result.tableName}</p>
+    <p class="hint">${result.tableName}</p>
     <div class="url-box">${result.scanUrl}</div>
     <p class="foot">Powered by <span>Huespire</span></p>
   </div>

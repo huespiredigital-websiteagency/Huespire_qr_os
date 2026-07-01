@@ -18,7 +18,7 @@ interface CustomerState {
     taxPercentage: number;
     theme?: string;
   } | null;
-  branch: {
+  branch?: {
     id: string;
     name: string;
   } | null;

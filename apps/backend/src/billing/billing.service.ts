@@ -32,7 +32,6 @@ export class BillingService {
       },
       include: {
         table: true,
-        branch: true,
         bills: { orderBy: { createdAt: "desc" }, take: 1 },
         payments: { orderBy: { createdAt: "desc" }, take: 1 },
         orders: {
@@ -91,10 +90,6 @@ export class BillingService {
           capacity: session.table.capacity,
           status: session.table.status
         },
-        branch: {
-          id: session.branch.id,
-          name: session.branch.name
-        },
         ordersCount: session.orders.length,
         hasUnservedOrders,
         summary: {
@@ -137,7 +132,6 @@ export class BillingService {
       where: { id: sessionId, restaurantId },
       include: {
         table: true,
-        branch: true,
         restaurant: {
           include: { settings: true }
         },
@@ -200,7 +194,6 @@ export class BillingService {
       bill = await this.prisma.bill.create({
         data: {
           restaurantId: session.restaurantId,
-          branchId: session.branchId,
           tableSessionId: session.id,
           billNumber,
           subtotal,
@@ -231,7 +224,6 @@ export class BillingService {
       },
       session: {
         id: session.id,
-        branchId: session.branchId,
         sessionNumber: session.sessionNumber,
         status: session.status,
         openedAt: session.openedAt
@@ -283,7 +275,6 @@ export class BillingService {
       const payment = await tx.payment.create({
         data: {
           restaurantId: user.restaurantId,
-          branchId: user.branchId || session.branchId,
           tableSessionId: session.id,
           billId: bill.id,
           paymentMethod: dto.paymentMethod,
@@ -330,7 +321,6 @@ export class BillingService {
 
     this.eventsGateway.emitPaymentCompleted(
       user.restaurantId,
-      result.branchId || session.branchId,
       session.id,
       table.id,
       {
@@ -375,8 +365,7 @@ export class BillingService {
         receivedBy: true,
         restaurant: {
           include: { settings: true }
-        },
-        branch: true
+        }
       }
     });
 
@@ -408,8 +397,8 @@ export class BillingService {
     return {
       restaurant: {
         name: payment.restaurant.name,
-        address: payment.branch?.address || payment.restaurant.address || "Main Branch",
-        phone: payment.branch?.phone || payment.restaurant.phone,
+        address: payment.restaurant.address || "Main Address",
+        phone: payment.restaurant.phone,
         currency: payment.restaurant.currency,
         footer: payment.restaurant.settings?.receiptFooter || "Thank you for dining with us!"
       },
@@ -440,9 +429,6 @@ export class BillingService {
     if (query.cashierId) {
       where.receivedById = query.cashierId;
     }
-    if (query.branchId) {
-      where.branchId = query.branchId;
-    }
     if (query.startDate || query.endDate) {
       where.paidAt = {};
       if (query.startDate) where.paidAt.gte = new Date(query.startDate);
@@ -454,8 +440,7 @@ export class BillingService {
       include: {
         bill: true,
         tableSession: { include: { table: true } },
-        receivedBy: true,
-        branch: true
+        receivedBy: true
       },
       orderBy: { paidAt: "desc" }
     });
@@ -474,7 +459,6 @@ export class BillingService {
         amount: Number(p.amount),
         paymentMethod: p.paymentMethod,
         cashierName: p.receivedBy ? `${p.receivedBy.firstName} ${p.receivedBy.lastName || ""}`.trim() : "System",
-        branchName: p.branch?.name || "Main",
         paidAt: p.paidAt || p.createdAt
       }))
     };

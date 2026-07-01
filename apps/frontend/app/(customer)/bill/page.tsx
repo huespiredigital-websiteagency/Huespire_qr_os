@@ -6,6 +6,19 @@ import { useCustomerStore } from "../../../lib/store/customer-store";
 import { getCustomerTableSession } from "../../../lib/api/customer";
 import { getSocket } from "../../../lib/socket";
 import Link from "next/link";
+import {
+  Receipt,
+  Hash,
+  Calendar,
+  CreditCard,
+  ClipboardList,
+  UtensilsCrossed,
+  ArrowRight,
+  AlertTriangle,
+  Lock,
+  Layers,
+  Clock,
+} from "lucide-react";
 
 export default function TableBillPage() {
   const searchParams = useSearchParams();
@@ -69,17 +82,19 @@ export default function TableBillPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 animate-pulse">
-        <div className="h-7 w-1/3 bg-neutral-850 rounded"></div>
-        <div className="h-20 w-full bg-neutral-850 rounded-3xl"></div>
-        <div className="h-44 w-full bg-neutral-850 rounded-3xl"></div>
+      <div className="min-h-screen bg-[#faf9f6] p-5 space-y-4 animate-pulse">
+        <div className="h-6 w-1/3 bg-slate-200/60 rounded-lg" />
+        <div className="h-4 w-56 bg-slate-200/60 rounded-lg" />
+        <div className="mt-6 space-y-3">
+          <div className="h-28 w-full bg-white border border-neutral-100 rounded-3xl" />
+          <div className="h-52 w-full bg-white border border-neutral-100 rounded-3xl" />
+        </div>
       </div>
     );
   }
 
   const currency = restaurant?.currency || "INR";
-  const theme = restaurant?.theme || "dark";
-  const isDark = theme === "dark";
+  const theme = restaurant?.theme || "light";
 
   // Consolidate identical items across all orders in the session
   const consolidatedItemsMap: { [key: string]: { name: string; quantity: number; subtotal: number; unitPrice: number } } = {};
@@ -115,124 +130,200 @@ export default function TableBillPage() {
   const grandTotal = subtotal + tax;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Title */}
-      <div className="border-b border-neutral-800/10 dark:border-neutral-800 pb-4 flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl font-black">Table Bill</h1>
-          <p className={`text-xs ${isDark ? "text-neutral-400" : "text-neutral-500"} mt-0.5`}>
-            Consolidated open bill details for your entire table.
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] text-emerald-400 font-bold">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          LIVE SYNC
-        </div>
-      </div>
-
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-xs">
-          ⚠️ {error}
-        </div>
-      )}
-
-      {!session || consolidatedItems.length === 0 ? (
-        <div className="text-center py-16 space-y-5">
-          <div className="text-5xl">🧾</div>
-          <div className="space-y-1">
-            <h3 className="font-extrabold text-sm text-neutral-300">No Active Bill</h3>
-            <p className="text-neutral-500 text-xs max-w-[200px] mx-auto leading-normal">
-              There are no orders placed on this table session yet.
+    <div className="min-h-screen bg-[#faf9f6] text-slate-800 font-sans pb-10">
+      {/* Header */}
+      <div className="px-5 pt-6 pb-4">
+        <div className="flex items-start justify-between">
+          <div className="space-y-0.5">
+            <h1 className="text-xl font-black text-slate-850 tracking-tight">
+              Table Bill
+            </h1>
+            <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+              Consolidated bill for Table {table?.tableNumber || "—"}
             </p>
           </div>
-          <Link
-            href={`/menu?token=${token}`}
-            className="inline-block bg-amber-500 hover:bg-amber-400 text-neutral-950 font-black px-6 py-3 rounded-xl text-xs transition-all"
-          >
-            Go to Menu
-          </Link>
+          <div className="flex items-center gap-1 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
+            </span>
+            <span className="text-[9px] font-extrabold text-[#0f5132] uppercase tracking-wider">
+              Live Sync
+            </span>
+          </div>
         </div>
-      ) : (
-        <div className="space-y-5">
-          {/* Table Session Details Card */}
-          <div className={`p-5 rounded-3xl border space-y-3 ${
-            isDark ? "bg-neutral-900/50 border-neutral-800" : "bg-white border-neutral-100 shadow-sm"
-          }`}>
-            <div className="flex justify-between items-center text-xs border-b border-neutral-800/10 dark:border-neutral-800 pb-3">
-              <span className="text-neutral-500 font-semibold uppercase tracking-wider">Session Details</span>
-              <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                {session.status}
-              </span>
+        <div className="mt-4 h-px bg-neutral-100" />
+      </div>
+
+      <div className="px-4 pb-8 space-y-4 animate-fade-up">
+        {/* Error */}
+        {error && (
+          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-2xl">
+            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+            <span className="text-xs text-red-650 font-semibold">{error}</span>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!session || consolidatedItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-5 bg-white border border-neutral-100 rounded-[28px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.015)]">
+            <div className="w-16 h-16 rounded-full bg-[#0f5132]/8 flex items-center justify-center">
+              <Receipt className="w-6.5 h-6.5 text-[#0f5132]" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="font-extrabold text-sm text-slate-800">
+                No Active Bill
+              </h3>
+              <p className="text-slate-400 text-xs max-w-[220px] mx-auto leading-relaxed font-semibold">
+                There are no active orders placed on this table session yet.
+              </p>
+            </div>
+            <Link
+              href={`/menu?token=${token}`}
+              className="inline-flex items-center gap-2 bg-[#0f5132] hover:bg-[#0d472c] text-white font-extrabold px-6 py-3 rounded-2xl text-xs transition-all duration-200 active:scale-[0.97] shadow-sm shadow-[#0f5132]/10"
+            >
+              Go to Menu
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Session Details Card */}
+            <div className="bg-white border border-neutral-100 rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.01)]">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-neutral-50 bg-slate-50/20">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-450">
+                  Session Details
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-800 text-[10px] font-bold">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-655" />
+                  </span>
+                  {session.status}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-px bg-neutral-100">
+                {/* Table Number */}
+                <div className="bg-white p-3.5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#0f5132]/8 flex items-center justify-center shrink-0 text-[#0f5132]">
+                    <UtensilsCrossed className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block leading-none">Table</span>
+                    <span className="text-xs font-bold text-slate-700">Table {table?.tableNumber}</span>
+                  </div>
+                </div>
+                {/* Session Code */}
+                <div className="bg-white p-3.5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-blue-600">
+                    <Hash className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block leading-none">Session</span>
+                    <span className="text-xs font-bold text-slate-700">#{session.sessionNumber.slice(-6)}</span>
+                  </div>
+                </div>
+                {/* Orders Count */}
+                <div className="bg-white p-3.5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center shrink-0 text-purple-600">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block leading-none">Tickets</span>
+                    <span className="text-xs font-bold text-slate-700">
+                      {session.orders?.filter((o: any) => o.orderStatus !== "CANCELLED").length} Orders
+                    </span>
+                  </div>
+                </div>
+                {/* Opened At */}
+                <div className="bg-white p-3.5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 text-emerald-600">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block leading-none">Time</span>
+                    <span className="text-xs font-bold text-slate-700">
+                      {new Date(session.openedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <span className="text-neutral-500 block mb-0.5">Table No.</span>
-                <span className="font-bold text-neutral-200">Table {table?.tableNumber}</span>
+            {/* Consolidated Receipt Card */}
+            <div className="bg-white border border-neutral-100 rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.01)]">
+              {/* Receipt Header */}
+              <div className="px-5 py-4 border-b border-neutral-50 flex items-center gap-2 bg-slate-50/20">
+                <Receipt className="w-4 h-4 text-[#0f5132]/60" />
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-450">
+                  Aggregated Items
+                </span>
+                <span className="text-[9px] text-slate-400 font-bold ml-auto uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-full">
+                  All Guests
+                </span>
               </div>
-              <div>
-                <span className="text-neutral-500 block mb-0.5">Session Code</span>
-                <span className="font-bold text-neutral-200">{session.sessionNumber}</span>
+
+              {/* Items */}
+              <div className="px-5 py-4 space-y-3.5">
+                {consolidatedItems.map((item: any, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-xs">
+                    <div className="flex items-center gap-2.5 max-w-[70%]">
+                      <span className="w-6.5 h-6.5 rounded-lg bg-[#0f5132]/6 border border-[#0f5132]/10 flex items-center justify-center text-[10px] font-extrabold text-[#0f5132] shrink-0">
+                        {item.quantity}
+                      </span>
+                      <div className="min-w-0">
+                        <span className="font-bold text-slate-700 block truncate">
+                          {item.name}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-semibold">
+                          {item.quantity} × {currency} {item.unitPrice.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="font-bold text-slate-500 tabular-nums">
+                      {currency} {item.subtotal.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <div>
-                <span className="text-neutral-500 block mb-0.5">Orders Placed</span>
-                <span className="font-bold text-neutral-200">{session.orders?.filter((o: any) => o.orderStatus !== "CANCELLED").length} Tickets</span>
+
+              {/* Pricing Summary */}
+              <div className="h-px bg-neutral-100" />
+              <div className="px-5 py-3 space-y-2">
+                <div className="flex justify-between text-xs text-slate-400">
+                  <span>Subtotal</span>
+                  <span className="tabular-nums font-semibold text-slate-650">{currency} {subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-slate-400">
+                  <span>GST / Tax</span>
+                  <span className="tabular-nums font-semibold text-slate-650">{currency} {tax.toFixed(2)}</span>
+                </div>
               </div>
-              <div>
-                <span className="text-neutral-500 block mb-0.5">Opened At</span>
-                <span className="font-bold text-neutral-200">
-                  {new Date(session.openedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+
+              {/* Grand Total */}
+              <div className="h-px bg-neutral-100" />
+              <div className="px-5 py-4 flex justify-between items-center bg-slate-50/30">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-[#0f5132]" />
+                  <span className="text-sm font-black text-slate-800">Grand Total</span>
+                </div>
+                <span className="text-base font-black text-[#0f5132] tabular-nums">
+                  {currency} {grandTotal.toFixed(2)}
                 </span>
               </div>
             </div>
-          </div>
 
-          {/* Consolidated Receipt Invoice Card */}
-          <div className={`p-5 rounded-3xl border space-y-4 relative ${
-            isDark ? "bg-neutral-900/30 border-neutral-800" : "bg-white border-neutral-100 shadow-sm"
-          }`}>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800/10 dark:border-neutral-800 pb-2">
-              Aggregated Items (All Table Guests)
-            </h3>
-
-            <div className="space-y-3.5">
-              {consolidatedItems.map((item: any, idx) => (
-                <div key={idx} className="flex justify-between items-start text-xs">
-                  <div className="flex flex-col space-y-0.5 max-w-[70%]">
-                    <span className="font-black text-neutral-200">{item.name}</span>
-                    <span className="text-[10px] text-neutral-500">{item.quantity} x {currency} {item.unitPrice.toFixed(2)}</span>
-                  </div>
-                  <span className="font-extrabold text-neutral-300">
-                    {currency} {item.subtotal.toFixed(2)}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Pricing Summary */}
-            <div className="border-t border-neutral-800/15 dark:border-neutral-800 pt-4 space-y-2 text-xs">
-              <div className="flex justify-between text-neutral-400">
-                <span>Subtotal</span>
-                <span>{currency} {subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-neutral-400">
-                <span>Tax</span>
-                <span>{currency} {tax.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm font-extrabold pt-2.5 border-t border-neutral-850 dark:border-neutral-800">
-                <span>Grand Total (Open Bill)</span>
-                <span className="text-amber-500">{currency} {grandTotal.toFixed(2)}</span>
-              </div>
+            {/* Privacy Disclaimer */}
+            <div className="flex items-start gap-3 p-4 bg-[#faf9f6] border border-neutral-200/50 rounded-2xl">
+              <Lock className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
+                Real-time consolidated table billing. All guest orders scanned under this table QR code are aggregated above. Please handle checkout payment with the cashier.
+              </p>
             </div>
           </div>
-
-          {/* Privacy Disclaimer */}
-          <div className="p-4 bg-neutral-950 border border-neutral-850/50 rounded-2xl text-[10px] text-neutral-500 text-center leading-normal">
-            🔒 Real-time consolidated table billing. All guests scanning this QR code view live updated table orders.
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -12,7 +12,6 @@ import {
   CreditCard,
   QrCode,
   User,
-  GitBranch,
   Receipt,
   Printer
 } from "lucide-react";

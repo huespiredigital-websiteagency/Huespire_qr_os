@@ -8,7 +8,6 @@ import { Button } from "../../../../components/ui/button";
 import { Modal } from "../../../../components/ui/modal";
 import { 
   CreditCard, 
-  GitBranch, 
   Users, 
   Check, 
   AlertCircle, 
@@ -22,13 +21,12 @@ import {
 } from "lucide-react";
 
 export default function SubscriptionPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const { addToast } = useUIStore();
 
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
-  const [branchesCount, setBranchesCount] = useState(0);
   const [staffCount, setStaffCount] = useState(0);
   const [tablesCount, setTablesCount] = useState(0); // Tables count fallback
 
@@ -40,10 +38,9 @@ export default function SubscriptionPage() {
   const fetchSubscriptionData = async () => {
     try {
       setLoading(true);
-      const [subRes, plansRes, branchRes, staffRes] = await Promise.all([
+      const [subRes, plansRes, staffRes] = await Promise.all([
         apiClient.get("/subscriptions/me"),
         apiClient.get("/plans"),
-        apiClient.get("/branches"),
         apiClient.get("/staff"),
       ]);
 
@@ -55,7 +52,6 @@ export default function SubscriptionPage() {
         );
         setPlans(sortedPlans);
       }
-      if (branchRes.data?.success) setBranchesCount(branchRes.data.data.length);
       if (staffRes.data?.success) setStaffCount(staffRes.data.data.length);
     } catch (err: any) {
       console.error("Failed to load subscription status:", err);
@@ -225,12 +221,6 @@ export default function SubscriptionPage() {
           </h4>
           <div className="space-y-4">
             {renderProgressBar(
-              "Branches", 
-              branchesCount, 
-              subscription?.maxBranches || 0,
-              <GitBranch className="h-4 w-4" />
-            )}
-            {renderProgressBar(
               "Staff Members", 
               staffCount, 
               subscription?.maxStaff || 0,
@@ -261,7 +251,7 @@ export default function SubscriptionPage() {
           </span>
           <h3 className="text-2xl font-black text-slate-900">Upgrade Your Workspace</h3>
           <p className="text-sm text-slate-500">
-            Unlock additional branches, staff capacities, tables, and custom integrations to grow your restaurant business.
+            Unlock additional staff capacities, tables, and custom integrations to grow your restaurant business.
           </p>
         </div>
 
@@ -269,7 +259,7 @@ export default function SubscriptionPage() {
           {plans.map((plan) => {
             const isCurrent = plan.id === currentPlan?.id;
             const price = Number(plan.monthlyPrice);
-            const isEnterprise = plan.code === "ENTERPRISE" || plan.maxBranches >= 999;
+            const isEnterprise = plan.code === "ENTERPRISE";
 
             return (
               <div 
@@ -309,12 +299,6 @@ export default function SubscriptionPage() {
                   </div>
 
                   <ul className="space-y-3 text-xs">
-                    <li className="flex items-center space-x-2 text-slate-700">
-                      <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>
-                        Branches: <strong className="text-slate-900">{plan.maxBranches >= 999999 ? "Unlimited" : plan.maxBranches}</strong>
-                      </span>
-                    </li>
                     <li className="flex items-center space-x-2 text-slate-700">
                       <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                       <span>
@@ -400,7 +384,7 @@ export default function SubscriptionPage() {
             <div className="text-xs">
               <h4 className="font-bold">Subscription Upgrade terms</h4>
               <p className="mt-1 text-indigo-700">
-                Upgrading package structures changes branch, staff, and table limit quotas immediately. Existing configurations are maintained intact.
+                Upgrading package structures changes staff and table limit quotas immediately. Existing configurations are maintained intact.
               </p>
             </div>
           </div>

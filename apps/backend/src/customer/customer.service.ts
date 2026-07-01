@@ -26,26 +26,18 @@ export class CustomerService {
             seatingCapacity: true,
             isActive: true,
             deletedAt: true,
-            branch: {
+            restaurant: {
               select: {
                 id: true,
                 name: true,
+                logoUrl: true,
+                currency: true,
+                taxPercentage: true,
                 isActive: true,
                 deletedAt: true,
-                restaurant: {
+                settings: {
                   select: {
-                    id: true,
-                    name: true,
-                    logoUrl: true,
-                    currency: true,
-                    taxPercentage: true,
-                    isActive: true,
-                    deletedAt: true,
-                    settings: {
-                      select: {
-                        theme: true
-                      }
-                    }
+                    theme: true
                   }
                 }
               }
@@ -68,12 +60,7 @@ export class CustomerService {
       throw new BadRequestException("Table is inactive or deleted");
     }
 
-    const branch = table.branch;
-    if (!branch || branch.deletedAt || !branch.isActive) {
-      throw new BadRequestException("Branch is inactive or deleted");
-    }
-
-    const restaurant = branch.restaurant;
+    const restaurant = table.restaurant;
     if (!restaurant || restaurant.deletedAt || !restaurant.isActive) {
       throw new BadRequestException("Restaurant is inactive or deleted");
     }
@@ -85,8 +72,6 @@ export class CustomerService {
       theme: restaurant.settings?.theme || "light",
       currency: restaurant.currency,
       taxPercentage: Number(restaurant.taxPercentage) || 0,
-      branchId: branch.id,
-      branchName: branch.name,
       tableId: table.id,
       tableName: table.tableName,
       tableNumber: table.tableNumber,
@@ -152,10 +137,6 @@ export class CustomerService {
         logoUrl: qrDetails.logoUrl,
         currency: qrDetails.currency,
         taxPercentage: qrDetails.taxPercentage,
-      },
-      branch: {
-        id: qrDetails.branchId,
-        name: qrDetails.branchName,
       },
       table: {
         id: qrDetails.tableId,
@@ -389,7 +370,7 @@ export class CustomerService {
 
   async createOrder(token: string, dto: CreateCustomerOrderDto) {
     const qrDetails = await this.validateToken(token);
-    const { restaurantId, branchId, tableId } = qrDetails;
+    const { restaurantId, tableId } = qrDetails;
 
     const cartCalculation = await this.validateCartInternal(restaurantId, dto.items);
 
@@ -441,7 +422,6 @@ export class CustomerService {
         activeSession = await tx.tableSession.create({
           data: {
             restaurantId,
-            branchId,
             tableId,
             sessionNumber,
             status: "OPEN",
@@ -453,7 +433,6 @@ export class CustomerService {
       const newOrder = await tx.order.create({
         data: {
           restaurantId,
-          branchId,
           tableId,
           customerId: customer.id,
           orderNumber,
@@ -529,19 +508,31 @@ export class CustomerService {
           }
         },
         table: true,
-        branch: true,
         session: true,
         customer: true
       }
     });
 
     if (fullOrder) {
+      const existingOrdersCount = await this.prisma.order.count({
+        where: {
+          sessionId: fullOrder.sessionId,
+          id: { not: fullOrder.id },
+          orderStatus: { not: "CANCELLED" }
+        }
+      });
+
+      const orderPayload = {
+        ...fullOrder,
+        isAdditional: existingOrdersCount > 0,
+        existingOrdersCount
+      };
+
       this.eventsGateway.emitOrderCreated(
         fullOrder.restaurantId,
-        fullOrder.branchId,
         fullOrder.sessionId || "",
         fullOrder.tableId,
-        fullOrder
+        orderPayload
       );
     }
 
@@ -562,7 +553,6 @@ export class CustomerService {
           }
         },
         table: true,
-        branch: true,
         restaurant: true,
         session: true,
         customer: true

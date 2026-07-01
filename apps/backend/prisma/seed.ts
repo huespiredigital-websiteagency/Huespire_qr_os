@@ -36,7 +36,6 @@ async function main() {
       setupFee: 18000.0,
       monthlyPrice: 1000.0,
       maxTables: 20,
-      maxBranches: 1,
       maxStaff: 10,
       monthlyEmailLimit: 1000,
       customDomain: false,
@@ -52,7 +51,6 @@ async function main() {
       setupFee: 25000.0,
       monthlyPrice: 1500.0,
       maxTables: 40,
-      maxBranches: 3,
       maxStaff: 30,
       monthlyEmailLimit: 5000,
       customDomain: true,
@@ -64,11 +62,10 @@ async function main() {
     {
       name: "Enterprise",
       code: "ENTERPRISE",
-      description: "Advanced plan for larger operations and multiple branches",
+      description: "Advanced plan for larger operations",
       setupFee: 30000.0,
       monthlyPrice: 2000.0,
       maxTables: 999999,
-      maxBranches: 999999,
       maxStaff: 999999,
       monthlyEmailLimit: 999999,
       customDomain: true,
@@ -157,7 +154,6 @@ async function main() {
             monthlyPrice: growthPlan.monthlyPrice,
             setupFee: growthPlan.setupFee,
             maxTables: growthPlan.maxTables,
-            maxBranches: growthPlan.maxBranches,
             maxStaff: growthPlan.maxStaff,
             monthlyEmailLimit: growthPlan.monthlyEmailLimit,
           },
@@ -239,31 +235,6 @@ async function main() {
   }
   console.log("✔ Demo Cashier");
 
-  // 6. Demo Branch
-  let branch = await prisma.branch.findFirst({
-    where: { restaurantId: demoRestaurant.id, name: "Main Branch" }
-  });
-
-  if (!branch) {
-    branch = await prisma.branch.create({
-      data: {
-        restaurantId: demoRestaurant.id,
-        name: "Main Branch",
-        code: "MAIN",
-        email: "main@restaurantos.local",
-        phone: "+919876543210",
-        address: "123 Tech Park",
-        city: "Bangalore",
-        state: "Karnataka",
-        country: "India",
-        openingTime: "09:00",
-        closingTime: "23:00",
-        isActive: true,
-      }
-    });
-  }
-  console.log("✔ Branch");
-
   // 7. Demo Tables & QR Codes
   const tableCount = 5;
   for (let i = 1; i <= tableCount; i++) {
@@ -272,8 +243,8 @@ async function main() {
 
     const table = await prisma.table.upsert({
       where: {
-        branchId_tableNumber: {
-          branchId: branch.id,
+        restaurantId_tableNumber: {
+          restaurantId: demoRestaurant.id,
           tableNumber,
         },
       },
@@ -283,7 +254,6 @@ async function main() {
       },
       create: {
         restaurantId: demoRestaurant.id,
-        branchId: branch.id,
         tableNumber,
         tableName,
         seatingCapacity: 4,
@@ -305,7 +275,6 @@ async function main() {
       qrCode = await prisma.qRCode.create({
         data: {
           restaurantId: demoRestaurant.id,
-          branchId: branch.id,
           tableId: table.id,
           qrToken: token,
           qrPath: `/qr/${token}.png`,
@@ -638,7 +607,7 @@ async function main() {
 
   // 14. Demo Orders (Completed, Preparing, Ready states)
   const targetTable = await prisma.table.findFirst({
-    where: { branchId: branch.id, tableNumber: 1 }
+    where: { restaurantId: demoRestaurant.id, tableNumber: 1 }
   });
 
   if (targetTable) {
@@ -650,7 +619,6 @@ async function main() {
       session = await prisma.tableSession.create({
         data: {
           restaurantId: demoRestaurant.id,
-          branchId: branch.id,
           tableId: targetTable.id,
           sessionNumber: `SES-DEMO-${Date.now().toString().slice(-6)}`,
           status: "OPEN",
@@ -668,7 +636,6 @@ async function main() {
       await prisma.order.create({
         data: {
           restaurantId: demoRestaurant.id,
-          branchId: branch.id,
           tableId: targetTable.id,
           customerId: customer.id,
           orderNumber: order1Num,
@@ -710,7 +677,6 @@ async function main() {
       await prisma.order.create({
         data: {
           restaurantId: demoRestaurant.id,
-          branchId: branch.id,
           tableId: targetTable.id,
           customerId: customer.id,
           orderNumber: order2Num,
@@ -745,7 +711,6 @@ async function main() {
       await prisma.order.create({
         data: {
           restaurantId: demoRestaurant.id,
-          branchId: branch.id,
           tableId: targetTable.id,
           customerId: customer.id,
           orderNumber: order3Num,

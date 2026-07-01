@@ -125,10 +125,9 @@ export default function MenuItemFormPage({ params }: { params: Promise<{ id: str
 
     const file = e.target.files[0];
     try {
-      toast.loading("Uploading image...", { id: "upload" });
-      const res = await uploadMenuImage(id, file, images.length === 0);
-      setImages([...images, res.data]);
-      toast.success("Image uploaded", { id: "upload" });
+      const res = await uploadMenuImage(id, file, true);
+      setImages([res.data]);
+      toast.success("Image updated successfully", { id: "upload" });
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to upload image", { id: "upload" });
     }
@@ -285,7 +284,9 @@ export default function MenuItemFormPage({ params }: { params: Promise<{ id: str
                   <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                   <div className="border-2 border-dashed border-neutral-700 hover:border-amber-500 rounded-xl p-8 text-center transition-colors">
                     <span className="text-2xl mb-2 block">📸</span>
-                    <span className="text-neutral-400 text-sm font-medium">Click to upload new image</span>
+                    <span className="text-neutral-400 text-sm font-medium">
+                      {images.length > 0 ? "Click to replace image" : "Click to upload image"}
+                    </span>
                   </div>
                 </label>
               </div>

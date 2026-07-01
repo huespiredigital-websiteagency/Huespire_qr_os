@@ -5,6 +5,27 @@ import { useCustomerStore } from "../../../lib/store/customer-store";
 import { useRouter } from "next/navigation";
 import { getCustomerTableSession } from "../../../lib/api/customer";
 import Link from "next/link";
+import {
+  Search,
+  X,
+  UtensilsCrossed,
+  ShoppingCart,
+  Receipt,
+  Bell,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  ClipboardList,
+  ArrowRight,
+  Flame,
+  Loader2,
+  Plus,
+  Compass,
+  Star,
+  Activity,
+  User,
+} from "lucide-react";
 
 type OrderStatus = "PENDING" | "ACCEPTED" | "PREPARING" | "READY" | "SERVED" | "COMPLETED" | "CANCELLED";
 
@@ -29,8 +50,7 @@ export default function MenuPage() {
   
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const theme = restaurant?.theme || "dark";
-  const isDark = theme === "dark";
+  const theme = restaurant?.theme || "light";
   const currency = restaurant?.currency || "INR";
 
   // Fetch session details on mount and poll every 5s
@@ -66,10 +86,8 @@ export default function MenuPage() {
   const myOrders = useMemo(() => {
     if (!session || !session.orders) return [];
     
-    // Filter by orderIds stored in Zustand/localStorage
     const filtered = session.orders.filter((o: any) => orderIds.includes(o.id));
     
-    // Sort: Newest active orders first, completed/cancelled below
     return filtered.sort((a: any, b: any) => {
       const aFinished = ["SERVED", "COMPLETED", "CANCELLED"].includes(a.orderStatus);
       const bFinished = ["SERVED", "COMPLETED", "CANCELLED"].includes(b.orderStatus);
@@ -169,105 +187,118 @@ export default function MenuPage() {
   };
 
   const handleCallWaiter = () => {
-    alert("🔔 Waiter has been notified! A staff member will be at your table shortly.");
+    alert("Waiter has been notified! A staff member will be at your table shortly.");
   };
 
-  const handleFeedback = () => {
-    alert("✍️ Thank you! Feedback portal will open post-payment.");
+  const getStatusColor = (status: OrderStatus) => {
+    switch (status) {
+      case "PENDING": return "bg-amber-500/10 text-amber-700 border-amber-500/20";
+      case "ACCEPTED": return "bg-blue-500/10 text-blue-700 border-blue-500/20";
+      case "PREPARING": return "bg-purple-500/10 text-purple-700 border-purple-500/20";
+      case "READY": return "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
+      case "SERVED":
+      case "COMPLETED": return "bg-slate-50 text-slate-500 border-neutral-100";
+      case "CANCELLED": return "bg-red-500/10 text-red-700 border-red-500/20";
+      default: return "bg-slate-50 text-slate-500 border-neutral-100";
+    }
   };
 
   if (loadingSession) {
     return (
-      <div className="p-6 space-y-6 animate-pulse">
-        <div className="h-8 w-1/3 bg-neutral-850 rounded"></div>
-        <div className="h-44 w-full bg-neutral-850 rounded-3xl"></div>
-        <div className="h-28 w-full bg-neutral-850 rounded-3xl"></div>
+      <div className="p-5 space-y-6 animate-pulse">
+        <div className="h-6 w-1/3 bg-slate-200/60 rounded-lg"></div>
+        <div className="h-40 w-full bg-slate-200/60 rounded-3xl"></div>
+        <div className="h-24 w-full bg-slate-200/60 rounded-3xl"></div>
       </div>
     );
   }
 
   return (
-    <div className="relative space-y-6 pb-24">
-      {/* 1. Dining Dashboard Section (Rendered when there is an active table session) */}
+    <div className="relative space-y-6 pb-24 font-sans text-slate-800">
+      
+      {/* 1. Dining Dashboard Section (Rendered when active session + orders exists) */}
       {hasActiveSession && myOrders.length > 0 && (
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-5">
           {/* Welcome Dashboard Header Card */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 rounded-3xl p-6 shadow-xl">
-            <div className="absolute top-[-20%] right-[-20%] w-36 h-36 bg-amber-500/10 blur-3xl rounded-full"></div>
+          <div className="relative overflow-hidden bg-white border border-neutral-100 rounded-3xl p-5 shadow-[0_6px_25px_rgba(0,0,0,0.015)]">
+            <div className="absolute top-[-30%] right-[-20%] w-40 h-40 bg-[#0f5132]/[0.02] blur-3xl rounded-full pointer-events-none"></div>
             
-            <div className="space-y-4">
+            <div className="space-y-4 relative z-10">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1 text-[9px] font-black text-amber-500 uppercase tracking-wider">
-                    🍽 Welcome Back{guestName ? `, ${guestName}` : ""}
+                  <div className="inline-flex items-center gap-1.5 bg-[#0f5132]/8 border border-[#0f5132]/10 rounded-full px-2.5 py-1 text-[9px] font-extrabold text-[#0f5132] uppercase tracking-wider">
+                    <User className="w-3 h-3" />
+                    Welcome Back{guestName ? `, ${guestName}` : ""}
                   </div>
-                  <h1 className="text-2xl font-black text-white">{restaurant?.name}</h1>
-                  <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                  <h1 className="text-xl font-black text-slate-800 tracking-tight">{restaurant?.name}</h1>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                     Table {table?.tableNumber} · Session #{session.sessionNumber.slice(-6)}
                   </p>
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full font-black text-[9px] uppercase tracking-wider">
-                  Session OPEN
+                <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 rounded-full font-extrabold text-[9px] px-2.5 py-1 uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                  Active
                 </span>
               </div>
 
-              {/* Status breakdown */}
-              <div className="border-t border-neutral-800/40 pt-4 grid grid-cols-2 gap-4">
+              {/* Status details grid */}
+              <div className="border-t border-neutral-100 pt-4 grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-neutral-500 text-[10px] block font-semibold uppercase tracking-wider">Table Bill Total</span>
-                  <span className="text-lg font-black text-amber-500">{currency} {Number(session.totalAmount).toFixed(2)}</span>
+                  <span className="text-slate-400 text-[10px] block font-extrabold uppercase tracking-wider">Table Bill Total</span>
+                  <span className="text-lg font-black text-[#0f5132]">{currency} {Number(session.totalAmount).toFixed(2)}</span>
                 </div>
                 <div>
-                  <span className="text-neutral-500 text-[10px] block font-semibold uppercase tracking-wider">Est. Wait Time</span>
-                  <span className="text-lg font-black text-neutral-200">~ 12-15 Mins</span>
+                  <span className="text-slate-400 text-[10px] block font-extrabold uppercase tracking-wider">Est. Wait Time</span>
+                  <span className="text-lg font-black text-slate-700">~ 12-15 Mins</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Quick Actions Grid */}
-          <div className="grid grid-cols-4 gap-3">
-            <button
-              onClick={handleContinueOrdering}
-              className={`p-3 rounded-2xl border text-center transition-all active:scale-95 ${
-                isDark ? "bg-neutral-850 border-neutral-800 hover:bg-neutral-800" : "bg-white border-neutral-100 hover:shadow-sm"
-              }`}
-            >
-              <span className="text-lg block mb-1">📋</span>
-              <span className="text-[9px] font-bold text-neutral-400">Order More</span>
-            </button>
-            <Link
-              href={`/my-orders?token=${token}`}
-              className={`p-3 rounded-2xl border text-center transition-all block active:scale-95 ${
-                isDark ? "bg-neutral-850 border-neutral-800 hover:bg-neutral-800" : "bg-white border-neutral-100 hover:shadow-sm"
-              }`}
-            >
-              <span className="text-lg block mb-1">🍔</span>
-              <span className="text-[9px] font-bold text-neutral-400">My Orders</span>
-            </Link>
-            <Link
-              href={`/bill?token=${token}`}
-              className={`p-3 rounded-2xl border text-center transition-all block active:scale-95 ${
-                isDark ? "bg-neutral-850 border-neutral-800 hover:bg-neutral-800" : "bg-white border-neutral-100 hover:shadow-sm"
-              }`}
-            >
-              <span className="text-lg block mb-1">🧾</span>
-              <span className="text-[9px] font-bold text-neutral-400">Table Bill</span>
-            </Link>
-            <button
-              onClick={handleCallWaiter}
-              className={`p-3 rounded-2xl border text-center transition-all active:scale-95 ${
-                isDark ? "bg-neutral-850 border-neutral-800 hover:bg-neutral-800" : "bg-white border-neutral-100 hover:shadow-sm"
-              }`}
-            >
-              <span className="text-lg block mb-1">🔔</span>
-              <span className="text-[9px] font-bold text-neutral-400">Call Waiter</span>
-            </button>
+          <div className="grid grid-cols-4 gap-2.5">
+            {[
+              { label: "Order More", icon: <UtensilsCrossed className="w-4.5 h-4.5" />, action: handleContinueOrdering },
+              { label: "My Orders", icon: <ClipboardList className="w-4.5 h-4.5" />, href: `/my-orders?token=${token}` },
+              { label: "Table Bill", icon: <Receipt className="w-4.5 h-4.5" />, href: `/bill?token=${token}` },
+              { label: "Call Waiter", icon: <Bell className="w-4.5 h-4.5" />, action: handleCallWaiter },
+            ].map((item, idx) => {
+              const innerContent = (
+                <div className="flex flex-col items-center gap-1 text-center">
+                  <div className="w-9 h-9 rounded-full bg-slate-50 border border-neutral-100 flex items-center justify-center text-slate-500 group-hover:text-[#0f5132] transition-colors">
+                    {item.icon}
+                  </div>
+                  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">{item.label}</span>
+                </div>
+              );
+
+              if (item.href) {
+                return (
+                  <Link
+                    key={idx}
+                    href={item.href}
+                    className="group bg-white border border-neutral-100 rounded-2xl p-2.5 flex flex-col items-center justify-center transition-all duration-200 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.01)] hover:border-neutral-200"
+                  >
+                    {innerContent}
+                  </Link>
+                );
+              }
+
+              return (
+                <button
+                  key={idx}
+                  onClick={item.action}
+                  className="group bg-white border border-neutral-100 rounded-2xl p-2.5 flex flex-col items-center justify-center transition-all duration-200 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.01)] hover:border-neutral-200"
+                >
+                  {innerContent}
+                </button>
+              );
+            })}
           </div>
 
           {/* Active Orders List */}
           <div className="space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 px-1">Active Orders</h3>
+            <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-1">Active Orders</h3>
             
             {myOrders.map((order: any) => {
               const status: OrderStatus = order.orderStatus;
@@ -280,43 +311,27 @@ export default function MenuPage() {
               return (
                 <div
                   key={order.id}
-                  className={`border rounded-3xl transition-all overflow-hidden ${
-                    isCancelled
-                      ? "opacity-60 bg-neutral-900/10 border-neutral-850"
-                      : isDark
-                      ? "bg-neutral-900/50 border-neutral-800"
-                      : "bg-white border-neutral-100 shadow-sm"
+                  className={`bg-white border rounded-2xl transition-all overflow-hidden ${
+                    isCancelled ? "opacity-60 border-neutral-200" : "border-neutral-100 shadow-[0_4px_20px_rgba(0,0,0,0.01)]"
                   }`}
                 >
                   {/* Card Header */}
-                  <div className="p-5 flex justify-between items-start gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-sm text-neutral-200">{order.orderNumber}</span>
-                        <span className="text-[10px] text-neutral-500">· {orderTime}</span>
+                  <div className="p-4 flex justify-between items-start gap-4">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-extrabold text-sm text-slate-800">{order.orderNumber}</span>
+                        <span className="text-[10px] text-slate-400">· {orderTime}</span>
                       </div>
-                      <p className="text-[10px] text-neutral-400">
+                      <p className="text-[10px] text-slate-400 font-medium">
                         {order.orderItems?.length} {order.orderItems?.length === 1 ? "item" : "items"} placed
                       </p>
                     </div>
 
-                    <div className="flex flex-col items-end gap-1.5">
-                      <span className={`px-2 py-0.5 rounded-full font-black text-[9px] uppercase tracking-wider ${
-                        status === "PENDING" && "bg-amber-500/10 text-amber-500 border border-amber-500/10"
-                      } ${
-                        status === "ACCEPTED" && "bg-blue-500/10 text-blue-400 border border-blue-500/10"
-                      } ${
-                        status === "PREPARING" && "bg-purple-500/10 text-purple-400 border border-purple-500/10 animate-pulse"
-                      } ${
-                        status === "READY" && "bg-emerald-500/10 text-emerald-400 border border-emerald-500/10"
-                      } ${
-                        isCompleted && "bg-neutral-800 text-neutral-400 border border-neutral-750"
-                      } ${
-                        isCancelled && "bg-red-500/10 text-red-500 border border-red-500/10"
-                      }`}>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wider border ${getStatusColor(status)}`}>
                         {status}
                       </span>
-                      <span className="font-black text-xs text-neutral-300">
+                      <span className="font-extrabold text-xs text-slate-600">
                         {currency} {Number(order.totalAmount).toFixed(2)}
                       </span>
                     </div>
@@ -324,12 +339,12 @@ export default function MenuPage() {
 
                   {/* Order Progress Timeline */}
                   {!isCancelled && !isCompleted && (
-                    <div className="px-5 pb-5 pt-2 border-t border-neutral-800/10 dark:border-neutral-850">
+                    <div className="px-4 pb-4 pt-1">
                       <div className="flex justify-between items-center relative">
                         {/* Connecting Line */}
-                        <div className="absolute left-1 right-1 top-[11px] h-[2px] bg-neutral-800 -z-0">
+                        <div className="absolute left-1 right-1 top-[11px] h-[2px] bg-slate-100 -z-0">
                           <div
-                            className="h-full bg-amber-500 transition-all duration-500"
+                            className="h-full bg-[#0f5132] transition-all duration-500"
                             style={{ width: `${(activeStepIdx / (steps.length - 1)) * 100}%` }}
                           ></div>
                         </div>
@@ -338,18 +353,16 @@ export default function MenuPage() {
                           const done = activeStepIdx >= idx;
                           const active = activeStepIdx === idx;
                           return (
-                            <div key={idx} className="flex flex-col items-center space-y-1.5 z-10">
+                            <div key={idx} className="flex flex-col items-center space-y-1 z-10">
                               <div className={`w-5 h-5 rounded-full border flex items-center justify-center font-bold text-[8px] transition-all ${
                                 done
-                                  ? "bg-amber-500 border-amber-500 text-neutral-950 shadow shadow-amber-500/10"
-                                  : isDark
-                                  ? "bg-neutral-900 border-neutral-800 text-neutral-600"
-                                  : "bg-neutral-50 border-neutral-200 text-neutral-450"
+                                  ? "bg-[#0f5132] border-[#0f5132] text-white shadow shadow-[#0f5132]/10"
+                                  : "bg-white border-neutral-200 text-neutral-400"
                               }`}>
                                 {done ? "✓" : idx + 1}
                               </div>
-                              <span className={`text-[8px] font-black uppercase tracking-wider ${
-                                active ? "text-amber-500" : done ? "text-neutral-300" : "text-neutral-550"
+                              <span className={`text-[7px] font-extrabold uppercase tracking-wider ${
+                                active ? "text-[#0f5132]" : done ? "text-slate-500" : "text-slate-400"
                               }`}>
                                 {step}
                               </span>
@@ -362,29 +375,29 @@ export default function MenuPage() {
 
                   {/* Expanded Items Section */}
                   {isExpanded && (
-                    <div className="px-5 pb-5 pt-3 border-t border-neutral-800/20 dark:border-neutral-850/50 bg-neutral-950/20 space-y-3">
-                      <div className="space-y-2.5">
+                    <div className="px-4 pb-4 pt-2.5 border-t border-neutral-100 bg-[#faf9f6]/40 space-y-3">
+                      <div className="space-y-2">
                         {order.orderItems?.map((item: any) => (
                           <div key={item.id} className="flex justify-between text-xs">
                             <div className="space-y-0.5">
-                              <span className="font-bold text-neutral-300">{item.quantity}x {item.menuItem?.name}</span>
+                              <span className="font-bold text-slate-700">{item.quantity}x {item.menuItem?.name}</span>
                               <div className="flex flex-wrap gap-1">
                                 {item.variants?.map((v: any) => (
-                                  <span key={v.id} className="text-[8px] text-amber-500 font-bold bg-amber-500/5 px-1 py-0.25 rounded">
+                                  <span key={v.id} className="text-[8px] text-[#0f5132] font-bold bg-[#0f5132]/5 px-1.5 py-0.5 rounded">
                                     {v.name}
                                   </span>
                                 ))}
                                 {item.addons?.map((a: any) => (
-                                  <span key={a.id} className="text-[8px] text-neutral-500 bg-neutral-800 px-1 py-0.25 rounded">
+                                  <span key={a.id} className="text-[8px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
                                     + {a.name}
                                   </span>
                                 ))}
                               </div>
                               {item.notes && (
-                                <p className="text-[9px] text-neutral-500 italic mt-0.5">"{item.notes}"</p>
+                                <p className="text-[9px] text-slate-400 italic mt-0.5">&quot;{item.notes}&quot;</p>
                               )}
                             </div>
-                            <span className="font-semibold text-neutral-450">{currency} {Number(item.subtotal).toFixed(2)}</span>
+                            <span className="font-bold text-slate-500">{currency} {Number(item.subtotal).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>
@@ -394,9 +407,13 @@ export default function MenuPage() {
                   {/* Card Expand Toggle Button */}
                   <button
                     onClick={() => toggleOrderExpand(order.id)}
-                    className="w-full py-2.5 text-center text-[10px] font-bold bg-neutral-950/10 border-t border-neutral-800/10 dark:border-neutral-850/40 text-neutral-400 hover:text-neutral-300 transition-all block"
+                    className="w-full py-2.5 text-center text-[10px] font-extrabold border-t border-neutral-100 text-slate-400 hover:text-slate-600 transition-all flex items-center justify-center gap-1"
                   >
-                    {isExpanded ? "Collapse Details ↑" : "Expand Details ↓"}
+                    {isExpanded ? (
+                      <>Collapse Details <ChevronUp className="w-3.5 h-3.5" /></>
+                    ) : (
+                      <>Expand Details <ChevronDown className="w-3.5 h-3.5" /></>
+                    )}
                   </button>
                 </div>
               );
@@ -407,7 +424,7 @@ export default function MenuPage() {
           <div className="pt-2">
             <button
               onClick={handleContinueOrdering}
-              className="w-full py-4.5 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-black text-sm rounded-2xl transition-all hover:scale-[1.01] active:scale-95 text-center shadow-lg shadow-amber-500/5"
+              className="w-full py-3.5 bg-[#0f5132] hover:bg-[#0d472c] text-white font-extrabold text-sm rounded-2xl transition-all hover:scale-[1.01] active:scale-95 text-center shadow-md shadow-[#0f5132]/10"
             >
               Browse Menu & Add Items
             </button>
@@ -420,14 +437,17 @@ export default function MenuPage() {
         <div ref={menuRef} className="space-y-6">
           {/* Welcome banner if no orders */}
           {(!hasActiveSession || myOrders.length === 0) && (
-            <div className="p-4 space-y-4">
-              <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/5 to-amber-600/5 border border-neutral-800 rounded-3xl p-6 text-center">
-                <div className="text-4xl mb-3">🍽️</div>
-                <h1 className="text-xl font-black text-white">
+            <div className="px-4">
+              <div className="relative overflow-hidden bg-white border border-neutral-100 rounded-3xl p-6 text-center shadow-[0_8px_30px_rgba(0,0,0,0.015)]">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(15,81,50,0.025)_0%,transparent_75%)] pointer-events-none"></div>
+                <div className="w-12 h-12 bg-[#0f5132]/8 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Compass className="w-6 h-6 text-[#0f5132]" />
+                </div>
+                <h1 className="text-xl font-black tracking-tight text-slate-800">
                   Welcome {guestName ? `back, ${guestName}` : `to ${restaurant?.name}`}
                 </h1>
-                <p className="text-neutral-400 text-xs mt-1">Ready to order? Browse our menu and customize your dishes.</p>
-                <div className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-4">
+                <p className="text-slate-400 text-xs mt-1 leading-relaxed">Ready to order? Browse our menu and customize your dishes.</p>
+                <div className="inline-block text-[9px] font-extrabold text-[#0f5132] uppercase tracking-wider mt-4 bg-[#0f5132]/5 px-3 py-1 rounded-full border border-[#0f5132]/10">
                   Table {table?.tableNumber} · {table?.tableName}
                 </div>
               </div>
@@ -437,8 +457,8 @@ export default function MenuPage() {
           {/* Search bar */}
           <div className="px-4 space-y-4">
             <div className="space-y-1">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-amber-500 px-1">Digital Menu</h3>
-              <p className={`text-xs ${isDark ? "text-neutral-400" : "text-neutral-500"} px-1`}>
+              <h3 className="text-sm font-black text-[#0f5132] px-0.5">Digital Menu</h3>
+              <p className="text-xs text-slate-400 px-0.5">
                 Delivered straight to your table
               </p>
             </div>
@@ -446,22 +466,18 @@ export default function MenuPage() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search pizza, drinks, desserts..."
+                placeholder="Search dishes, drinks, desserts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full py-3 pl-10 pr-4 text-sm rounded-2xl border transition-all ${
-                  isDark
-                    ? "bg-neutral-855 border-neutral-800 text-white placeholder-neutral-500 focus:border-amber-500"
-                    : "bg-neutral-50 border-neutral-200 text-neutral-900 placeholder-neutral-400 focus:border-amber-500"
-                } focus:outline-none focus:ring-1 focus:ring-amber-500`}
+                className="w-full py-3.5 pl-10 pr-10 text-sm rounded-2xl border border-neutral-100 bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0f5132]/30 focus:border-[#0f5132] transition-all shadow-[0_4px_15px_rgba(0,0,0,0.01)]"
               />
-              <span className="absolute left-3.5 top-3.5 text-neutral-550 text-sm">🔍</span>
+              <Search className="absolute left-3.5 top-[15px] w-4.5 h-4.5 text-slate-400" />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-3 text-neutral-450 text-xs p-1"
+                  className="absolute right-3 top-[11px] p-1 rounded-full hover:bg-slate-100 transition-colors"
                 >
-                  ✕
+                  <X className="w-4 h-4 text-slate-500" />
                 </button>
               )}
             </div>
@@ -469,10 +485,13 @@ export default function MenuPage() {
 
           {/* Featured items */}
           {!searchQuery && !selectedCategoryId && featuredItems.length > 0 && (
-            <div className="py-2 space-y-3">
+            <div className="space-y-3">
               <div className="px-4 flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">Popular Choices</h3>
-                <span className="text-[10px] text-neutral-500">Chef Specials</span>
+                <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  Popular Choices
+                </h3>
+                <span className="text-[9px] font-bold text-slate-400 bg-slate-50 border border-neutral-100 px-2 py-0.5 rounded-full">Chef Specials</span>
               </div>
               
               <div className="flex gap-4 overflow-x-auto px-4 pb-3 scrollbar-none snap-x">
@@ -482,47 +501,46 @@ export default function MenuPage() {
                     <Link
                       href={`/menu/${item.id}?token=${token}`}
                       key={`feat-${item.id}`}
-                      className={`flex-shrink-0 w-64 snap-start rounded-3xl overflow-hidden border p-3 flex flex-col justify-between transition-all active:scale-[0.98] ${
-                        isDark
-                          ? "bg-neutral-900/40 border-neutral-800 hover:bg-neutral-850/60"
-                          : "bg-white border-neutral-100 shadow-sm hover:shadow-md"
-                      }`}
+                      className="flex-shrink-0 w-60 snap-start bg-white border border-neutral-100 rounded-3xl p-3 flex flex-col justify-between transition-all duration-200 active:scale-[0.98] shadow-[0_6px_20px_rgba(0,0,0,0.015)] hover:border-neutral-250/60"
                     >
-                      <div className="relative w-full h-32 rounded-2xl overflow-hidden mb-3 bg-neutral-850">
+                      <div className="relative w-full h-32 rounded-2xl overflow-hidden mb-3 bg-slate-100">
                         {primaryImg ? (
                           <img src={primaryImg} alt={item.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-neutral-500">
+                          <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">
                             No Image
                           </div>
                         )}
-                        <div className="absolute top-2 right-2 bg-neutral-900/80 backdrop-blur-md text-[10px] px-2 py-0.5 rounded-full text-amber-500 font-bold">
-                          {item.preparationTime}m
-                        </div>
+                        {item.preparationTime && (
+                          <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-md text-[9px] px-2.5 py-0.5 rounded-full text-slate-600 font-bold border border-neutral-100 flex items-center gap-0.5">
+                            <Clock className="w-2.5 h-2.5 text-[#0f5132]" />
+                            {item.preparationTime}m
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5">
                           {item.isVeg ? (
-                            <span className="w-2.5 h-2.5 border border-emerald-600 rounded-sm p-[1px] flex items-center justify-center">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span className="w-3.5 h-3.5 border border-emerald-600 rounded-[3px] p-[1.5px] flex items-center justify-center">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                             </span>
                           ) : (
-                            <span className="w-2.5 h-2.5 border border-red-600 rounded-sm p-[1px] flex items-center justify-center">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                            <span className="w-3.5 h-3.5 border border-red-600 rounded-[3px] p-[1.5px] flex items-center justify-center">
+                              <span className="w-2 h-2 rounded-full bg-red-500"></span>
                             </span>
                           )}
-                          <span className="text-xs font-semibold text-neutral-450">{item.calories || 0} kcal</span>
+                          <span className="text-[10px] font-bold text-slate-400">{item.calories || 0} kcal</span>
                         </div>
-                        <h4 className="font-bold text-sm truncate">{item.name}</h4>
-                        <p className={`text-xs truncate ${isDark ? "text-neutral-400" : "text-neutral-500"} mt-0.5`}>
+                        <h4 className="font-extrabold text-sm text-slate-800 truncate">{item.name}</h4>
+                        <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">
                           {item.description || "Fresh and delicious item."}
                         </p>
                       </div>
-                      <div className="flex items-center justify-between mt-3">
-                        <span className="font-extrabold text-sm text-amber-500">
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-neutral-50">
+                        <span className="font-black text-sm text-[#0f5132]">
                           {currency} {Number(item.price).toFixed(2)}
                         </span>
-                        <span className="text-xs bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded-xl font-bold">
+                        <span className="text-[10px] bg-[#0f5132]/6 text-[#0f5132] px-2.5 py-1 rounded-xl font-extrabold border border-[#0f5132]/10 transition-colors">
                           Customize +
                         </span>
                       </div>
@@ -534,17 +552,13 @@ export default function MenuPage() {
           )}
 
           {/* Sticky Category Navigator */}
-          <div className={`sticky top-[58px] z-40 border-y py-2.5 backdrop-blur-md overflow-x-auto flex gap-2 px-4 scrollbar-none ${
-            isDark ? "bg-neutral-900/90 border-neutral-800" : "bg-white/90 border-neutral-100"
-          }`}>
+          <div className="sticky top-[58px] z-40 border-y border-neutral-100 py-2.5 bg-[#faf9f6]/95 backdrop-blur-xl overflow-x-auto flex gap-2 px-4 scrollbar-none">
             <button
               onClick={() => setSelectedCategoryId(null)}
-              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200 border ${
                 selectedCategoryId === null
-                  ? "bg-amber-500 text-neutral-950 scale-105"
-                  : isDark
-                  ? "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                  ? "bg-[#0f5132] text-white border-[#0f5132] shadow-sm shadow-[#0f5132]/15 scale-105"
+                  : "bg-white text-slate-400 border-neutral-100 hover:bg-slate-50"
               }`}
             >
               All Menu
@@ -553,12 +567,10 @@ export default function MenuPage() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategoryId(cat.id)}
-                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200 border ${
                   selectedCategoryId === cat.id
-                    ? "bg-amber-500 text-neutral-950 scale-105"
-                    : isDark
-                    ? "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    ? "bg-[#0f5132] text-white border-[#0f5132] shadow-sm shadow-[#0f5132]/15 scale-105"
+                    : "bg-white text-slate-400 border-neutral-100 hover:bg-slate-50"
                 }`}
               >
                 {cat.name}
@@ -569,25 +581,23 @@ export default function MenuPage() {
           {/* Grouped Category Items List */}
           <div className="px-4 space-y-8">
             {filteredItemsGrouped.length === 0 ? (
-              <div className="text-center py-12 space-y-3">
-                <span className="text-4xl">🍽️</span>
-                <p className={`text-sm ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+              <div className="text-center py-16 space-y-3 bg-white border border-neutral-100 rounded-3xl p-6">
+                <UtensilsCrossed className="w-8 h-8 text-slate-300 mx-auto" />
+                <p className="text-slate-400 text-xs">
                   No menu items found. Try searching for something else!
                 </p>
               </div>
             ) : (
               filteredItemsGrouped.map((cat: any) => (
-                <div key={cat.id} className="space-y-4">
-                  <h3 className="text-sm font-extrabold flex items-center justify-between border-b pb-1 border-neutral-800/10 dark:border-neutral-800">
-                    <span>{cat.name}</span>
-                    <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded ${
-                      isDark ? "bg-neutral-800 text-neutral-400" : "bg-neutral-100 text-neutral-550"
-                    }`}>
+                <div key={cat.id} className="space-y-3">
+                  <h3 className="text-sm font-extrabold flex items-center justify-between border-b pb-1.5 border-neutral-100">
+                    <span className="text-slate-700">{cat.name}</span>
+                    <span className="text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-slate-50 text-slate-400 border border-neutral-200/50">
                       {cat.menuItems.length} items
                     </span>
                   </h3>
                   
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 gap-3.5">
                     {cat.menuItems.map((item: any) => {
                       const primaryImg = item.images?.find((img: any) => img.isPrimary)?.imageUrl || item.imageUrl || "";
                       const outOfStock = !item.isAvailable;
@@ -595,25 +605,21 @@ export default function MenuPage() {
                         <Link
                           href={`/menu/${item.id}?token=${token}`}
                           key={item.id}
-                          className={`flex gap-4 p-3 rounded-2xl border transition-all active:scale-[0.99] ${
+                          className={`flex gap-3.5 p-3 rounded-[20px] bg-white border border-neutral-100 transition-all duration-200 active:scale-[0.99] shadow-[0_4px_15px_rgba(0,0,0,0.01)] hover:border-neutral-200/80 ${
                             outOfStock ? "opacity-60 cursor-not-allowed" : ""
-                          } ${
-                            isDark
-                              ? "bg-neutral-800/20 border-neutral-850 hover:bg-neutral-800/40"
-                              : "bg-white border-neutral-100 hover:shadow-sm"
                           }`}
                         >
-                          <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-neutral-850 flex-shrink-0">
+                          <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0">
                             {primaryImg ? (
                               <img src={primaryImg} alt={item.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-500 text-center">
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400 text-center">
                                 No Image
                               </div>
                             )}
                             {outOfStock && (
-                              <div className="absolute inset-0 bg-black/75 backdrop-blur-xxs flex items-center justify-center">
-                                <span className="text-[10px] font-extrabold text-red-500 uppercase tracking-wider">
+                              <div className="absolute inset-0 bg-white/90 backdrop-blur-xxs flex items-center justify-center">
+                                <span className="text-[10px] font-black text-red-600 uppercase tracking-wider">
                                   Sold Out
                                 </span>
                               </div>
@@ -622,36 +628,35 @@ export default function MenuPage() {
 
                           <div className="flex-1 flex flex-col justify-between py-0.5 min-w-0">
                             <div>
-                              <div className="flex items-center gap-1.5 mb-0.5">
+                              <div className="flex items-center gap-1.5 mb-1">
                                 {item.isVeg ? (
-                                  <span className="w-2.5 h-2.5 border border-emerald-600 rounded-sm p-[1px] flex items-center justify-center">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                  <span className="w-3.5 h-3.5 border border-emerald-600 rounded-[3px] p-[1.5px] flex items-center justify-center">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                                   </span>
                                 ) : (
-                                  <span className="w-2.5 h-2.5 border border-red-600 rounded-sm p-[1px] flex items-center justify-center">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                  <span className="w-3.5 h-3.5 border border-red-600 rounded-[3px] p-[1.5px] flex items-center justify-center">
+                                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
                                   </span>
                                 )}
-                                <span className="text-[10px] text-neutral-550">
+                                <span className="text-[10px] font-bold text-slate-400">
                                   {item.calories ? `${item.calories} kcal` : ""} {item.preparationTime ? `· ${item.preparationTime}m` : ""}
                                 </span>
                               </div>
                               
-                              <h4 className="font-extrabold text-sm truncate">{item.name}</h4>
-                              <p className={`text-xs line-clamp-2 mt-1 leading-relaxed ${
-                                isDark ? "text-neutral-400" : "text-neutral-500"
-                              }`}>
+                              <h4 className="font-extrabold text-sm text-slate-800 truncate">{item.name}</h4>
+                              <p className="text-xs line-clamp-2 mt-0.5 leading-relaxed text-slate-400">
                                 {item.description || "Freshly cooked to order."}
                               </p>
                             </div>
                             
-                            <div className="flex items-center justify-between mt-2">
-                              <span className="font-extrabold text-sm text-amber-500">
+                            <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-neutral-50">
+                              <span className="font-extrabold text-sm text-[#0f5132]">
                                 {currency} {Number(item.price).toFixed(2)}
                               </span>
                               {!outOfStock && (
-                                <span className="text-[11px] bg-amber-500 text-neutral-950 px-3 py-1 rounded-xl font-extrabold transition-all hover:bg-amber-400">
-                                  Add +
+                                <span className="inline-flex items-center gap-0.5 text-[10px] bg-[#0f5132] text-white px-3 py-1 rounded-lg font-bold shadow-sm shadow-[#0f5132]/10 transition-colors">
+                                  <Plus className="w-3.5 h-3.5" />
+                                  Add
                                 </span>
                               )}
                             </div>
@@ -669,20 +674,21 @@ export default function MenuPage() {
 
       {/* Sticky Bottom Cart Strip */}
       {cartCount > 0 && (
-        <div className="fixed bottom-[58px] left-1/2 -translate-x-1/2 w-full max-w-md p-4 z-50 transition-all duration-300">
+        <div className="fixed bottom-[74px] left-1/2 -translate-x-1/2 w-full max-w-md p-4 z-40 transition-all duration-300">
           <Link
             href={`/cart?token=${token}`}
-            className="flex items-center justify-between bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold px-6 py-4 rounded-2xl shadow-lg shadow-amber-500/10 active:scale-[0.98] transition-all"
+            className="flex items-center justify-between bg-[#0f5132] hover:bg-[#0d472c] text-white font-bold px-5 py-3.5 rounded-2xl shadow-lg shadow-[#0f5132]/15 active:scale-[0.98] transition-all"
           >
             <div className="flex items-center gap-2">
-              <span className="bg-neutral-950 text-amber-500 text-xs px-2.5 py-1 rounded-full font-black">
+              <span className="bg-white text-[#0f5132] text-xs px-2.5 py-1 rounded-full font-black">
                 {cartCount} {cartCount === 1 ? "Item" : "Items"}
               </span>
-              <span className="text-sm font-extrabold">View Cart</span>
+              <span className="text-sm font-bold">View Cart</span>
             </div>
-            <span className="text-sm font-black">
-              {currency} {cartTotalAmount.toFixed(2)} →
-            </span>
+            <div className="flex items-center gap-1 text-sm font-black">
+              <span>{currency} {cartTotalAmount.toFixed(2)}</span>
+              <ArrowRight className="w-4 h-4" />
+            </div>
           </Link>
         </div>
       )}

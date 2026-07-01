@@ -81,7 +81,6 @@ export class AuthService {
               monthlyPrice: plan.monthlyPrice,
               setupFee: plan.setupFee,
               maxTables: plan.maxTables,
-              maxBranches: plan.maxBranches,
               monthlyEmailLimit: plan.monthlyEmailLimit,
             }
           }

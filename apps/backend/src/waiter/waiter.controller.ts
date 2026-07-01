@@ -18,9 +18,8 @@ export class WaiterController {
   @ApiOperation({ summary: "Get orders organized for waiter service (Ready, Serving, Served)" })
   async getWaiterOrders(
     @CurrentUser() user: any,
-    @Query("branchId") branchId?: string
   ) {
-    const data = await this.waiterService.getWaiterOrders(user.restaurantId, branchId);
+    const data = await this.waiterService.getWaiterOrders(user.restaurantId);
     return {
       success: true,
       message: "Waiter orders retrieved successfully",

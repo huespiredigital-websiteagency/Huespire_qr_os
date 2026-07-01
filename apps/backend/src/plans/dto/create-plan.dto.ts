@@ -32,11 +32,6 @@ export class CreatePlanDto {
   @Min(1)
   maxTables: number;
 
-  @ApiProperty({ description: "Maximum Branches allowed", example: 1 })
-  @IsNumber({ allowInfinity: false, allowNaN: false })
-  @Min(1)
-  maxBranches: number;
-
   @ApiProperty({ description: "Maximum Staff Accounts allowed", example: 5 })
   @IsNumber({ allowInfinity: false, allowNaN: false })
   @Min(1)

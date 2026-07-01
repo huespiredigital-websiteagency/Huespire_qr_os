@@ -18,7 +18,4 @@ export class FilterPaymentsQueryDto {
   @IsString()
   cashierId?: string;
 
-  @IsOptional()
-  @IsString()
-  branchId?: string;
 }

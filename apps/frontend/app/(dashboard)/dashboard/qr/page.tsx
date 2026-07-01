@@ -36,12 +36,10 @@ export default function QRCodesPage() {
 
   const [loading, setLoading] = useState(true);
   const [qrs, setQrs] = useState<any[]>([]);
-  const [branches, setBranches] = useState<any[]>([]);
   const [restaurant, setRestaurant] = useState<any>(null);
 
   // Filters & Search
   const [searchTerm, setSearchTerm] = useState("");
-  const [branchFilter, setBranchFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   // Selection
@@ -65,14 +63,12 @@ export default function QRCodesPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [qrRes, branchRes, restRes] = await Promise.all([
+      const [qrRes, restRes] = await Promise.all([
         apiClient.get("/qr"),
-        apiClient.get("/branches"),
         apiClient.get("/restaurants/me"),
       ]);
 
       if (qrRes.data?.success) setQrs(qrRes.data.data);
-      if (branchRes.data?.success) setBranches(branchRes.data.data);
       if (restRes.data?.success) setRestaurant(restRes.data.data);
     } catch (err: any) {
       console.error("Failed to load QR code data:", err);
@@ -112,7 +108,6 @@ export default function QRCodesPage() {
   const totalScans = qrs.reduce((acc, curr) => acc + (curr.scanCount || 0), 0);
   const mostScanned = [...qrs].sort((a, b) => (b.scanCount || 0) - (a.scanCount || 0))[0];
 
-  // Filtering
   const filteredQrs = qrs.filter((qr) => {
     const tableNumStr = qr.table?.tableNumber?.toString() || "";
     const tableNameStr = qr.table?.tableName?.toLowerCase() || "";
@@ -120,12 +115,11 @@ export default function QRCodesPage() {
       tableNameStr.includes(searchTerm.toLowerCase()) ||
       tableNumStr.includes(searchTerm) ||
       qr.qrToken.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBranch = branchFilter === "all" || qr.branchId === branchFilter;
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "active" && qr.isActive) ||
       (statusFilter === "inactive" && !qr.isActive);
-    return matchesSearch && matchesBranch && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
   // Pagination
@@ -295,36 +289,6 @@ export default function QRCodesPage() {
     }
   };
 
-  const handleGenerateForBranch = async (bId: string) => {
-    if (bId === "all") return;
-    try {
-      setLoading(true);
-      const branchName = branches.find((b) => b.id === bId)?.name || "Branch";
-      // Fetch tables belonging to branch that don't have QR codes
-      // Note: Backend automatically generates QR codes on table creation, 
-      // but in case of manual data sync errors, this guarantees they exist
-      const branchTablesRes = await apiClient.get(`/tables?branchId=${bId}`);
-      if (branchTablesRes.data?.success) {
-        const branchTables = branchTablesRes.data.data;
-        let regensCount = 0;
-        for (const t of branchTables) {
-          if (!t.qrCode) {
-            // Table doesn't have a QR code, let's regenerate one (which creates if missing)
-            await apiClient.post("/qr/regenerate", { tableId: t.id });
-            regensCount++;
-          }
-        }
-        addToast(`Ensured QR code synchronization for ${branchName}. Generated ${regensCount} missing profiles.`, "success");
-        fetchData();
-      }
-    } catch (err) {
-      console.error(err);
-      addToast("Failed synchronizing branch QR codes.", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -412,47 +376,21 @@ export default function QRCodesPage() {
             <div className="flex items-center space-x-2">
               <Filter className="h-4 w-4 text-slate-400" />
               <select
-                value={branchFilter}
+                value={statusFilter}
                 onChange={(e) => {
-                  setBranchFilter(e.target.value);
+                  setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
                 className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-700 focus:ring-1 focus:ring-indigo-500 cursor-pointer focus:outline-none"
               >
-                <option value="all">All Branches</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
+                <option value="all">All Statuses</option>
+                <option value="active">Active QR Codes</option>
+                <option value="inactive">Inactive QR Codes</option>
               </select>
             </div>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-700 focus:ring-1 focus:ring-indigo-500 cursor-pointer focus:outline-none"
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active QR Codes</option>
-              <option value="inactive">Inactive QR Codes</option>
-            </select>
           </div>
 
           <div className="flex items-center gap-3">
-            {branchFilter !== "all" && canManage && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleGenerateForBranch(branchFilter)}
-                className="rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-              >
-                Sync Branch QRs
-              </Button>
-            )}
             <Button
               variant="outline"
               size="sm"
@@ -460,7 +398,7 @@ export default function QRCodesPage() {
               className="rounded-xl"
             >
               <Printer className="h-4 w-4 mr-2" />
-              Print Branch ({filteredQrs.length})
+              Print QR Codes ({filteredQrs.length})
             </Button>
           </div>
         </div>
@@ -522,7 +460,7 @@ export default function QRCodesPage() {
             <div className="space-y-1">
               <h3 className="text-md font-bold text-slate-900">No QR Code Profiles</h3>
               <p className="text-sm text-slate-500">
-                {searchTerm || branchFilter !== "all" || statusFilter !== "all"
+                {searchTerm || statusFilter !== "all"
                   ? "No QR codes match the current search filters."
                   : "Tables automatically get a QR code assigned. Check if you have dining tables added."}
               </p>
@@ -552,7 +490,6 @@ export default function QRCodesPage() {
                         />
                         <div>
                           <h4 className="text-sm font-bold text-slate-900">{qr.table?.tableName}</h4>
-                          <p className="text-[10px] text-slate-400">Branch: {qr.branch?.name}</p>
                         </div>
                       </div>
                       <span className="h-7 w-7 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs">
@@ -707,7 +644,6 @@ export default function QRCodesPage() {
                   </div>
                 )}
                 <h2 className="text-lg font-extrabold text-slate-800 tracking-tight">{restaurant?.name || "Restaurant"}</h2>
-                <p className="text-[10px] text-slate-400 uppercase tracking-widest">{item.branch?.name}</p>
               </div>
 
               {/* QR Image */}

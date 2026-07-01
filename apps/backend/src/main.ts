@@ -22,7 +22,10 @@ async function bootstrap() {
   });
 
   // Serve static files
-  app.useStaticAssets(path.join(__dirname, '..', 'public'));
+  const publicPath = __dirname.includes('dist')
+    ? path.join(__dirname, '..', '..', 'public')
+    : path.join(__dirname, '..', 'public');
+  app.useStaticAssets(publicPath);
 
   // Global pipes & filters
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

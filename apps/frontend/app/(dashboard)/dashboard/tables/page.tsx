@@ -40,12 +40,10 @@ export default function TablesPage() {
 
   const [loading, setLoading] = useState(true);
   const [tables, setTables] = useState<any[]>([]);
-  const [branches, setBranches] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<any>(null);
 
   // Filters & Search
   const [searchTerm, setSearchTerm] = useState("");
-  const [branchFilter, setBranchFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
@@ -63,7 +61,6 @@ export default function TablesPage() {
   // Form Fields State
   const [tableName, setTableName] = useState("");
   const [tableNumber, setTableNumber] = useState<number | "">("");
-  const [branchId, setBranchId] = useState("");
   const [seatingCapacity, setSeatingCapacity] = useState<number>(4);
   const [notes, setNotes] = useState("");
   const [tableStatus, setTableStatus] = useState("AVAILABLE");
@@ -75,14 +72,12 @@ export default function TablesPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [tableRes, branchRes, subRes] = await Promise.allSettled([
+      const [tableRes, subRes] = await Promise.allSettled([
         apiClient.get("/tables"),
-        apiClient.get("/branches"),
         apiClient.get("/subscriptions/me"),
       ]);
 
       if (tableRes.status === "fulfilled" && tableRes.value.data?.success) setTables(tableRes.value.data.data);
-      if (branchRes.status === "fulfilled" && branchRes.value.data?.success) setBranches(branchRes.value.data.data);
       if (subRes.status === "fulfilled" && subRes.value.data?.success) setSubscription(subRes.value.data.data);
     } catch (err: any) {
       console.error("Failed to load tables configurations:", err);
@@ -122,7 +117,6 @@ export default function TablesPage() {
     if (tableNumber === "" || Number(tableNumber) <= 0) {
       tempErrors.tableNumber = "Table Number must be a positive integer";
     }
-    if (!branchId) tempErrors.branchId = "Branch assignment is required";
     if (seatingCapacity <= 0) {
       tempErrors.seatingCapacity = "Capacity must be positive";
     }
@@ -132,14 +126,9 @@ export default function TablesPage() {
   };
 
   const handleOpenAdd = () => {
-    if (branches.length === 0) {
-      addToast("Please create a branch location first before adding tables.", "warning");
-      return;
-    }
     setSelectedTable(null);
     setTableName("");
     setTableNumber("");
-    setBranchId(branches[0]?.id || "");
     setSeatingCapacity(4);
     setNotes("");
     setTableStatus("AVAILABLE");
@@ -152,7 +141,6 @@ export default function TablesPage() {
     setSelectedTable(table);
     setTableName(table.tableName || "");
     setTableNumber(table.tableNumber || "");
-    setBranchId(table.branchId || "");
     setSeatingCapacity(table.seatingCapacity || 4);
     setNotes(table.notes || "");
     setTableStatus(table.status || "AVAILABLE");
@@ -181,7 +169,6 @@ export default function TablesPage() {
       const payload = {
         tableName,
         tableNumber: Number(tableNumber),
-        branchId,
         seatingCapacity: Number(seatingCapacity),
         notes: notes || undefined,
         status: tableStatus,
@@ -288,14 +275,12 @@ export default function TablesPage() {
     outOfService: tables.filter((t) => t.status === "OUT_OF_SERVICE").length,
   };
 
-  // Filtering
   const filteredTables = tables.filter((table) => {
     const matchesSearch =
       table.tableName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       table.tableNumber.toString().includes(searchTerm);
-    const matchesBranch = branchFilter === "all" || table.branchId === branchFilter;
     const matchesStatus = statusFilter === "all" || table.status === statusFilter;
-    return matchesSearch && matchesBranch && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
   // Pagination logic
@@ -384,41 +369,25 @@ export default function TablesPage() {
             />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-slate-400" />
-            <select
-              value={branchFilter}
-              onChange={(e) => {
-                setBranchFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-700 focus:ring-1 focus:ring-indigo-500 cursor-pointer focus:outline-none"
-            >
-              <option value="all">All Branches</option>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4 text-slate-400" />
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-700 focus:ring-1 focus:ring-indigo-500 cursor-pointer focus:outline-none"
+              >
+                <option value="all">All Statuses</option>
+                <option value="AVAILABLE">AVAILABLE</option>
+                <option value="OCCUPIED">OCCUPIED</option>
+                <option value="RESERVED">RESERVED</option>
+                <option value="CLEANING">CLEANING</option>
+                <option value="OUT_OF_SERVICE">OUT OF SERVICE</option>
+              </select>
+            </div>
           </div>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-700 focus:ring-1 focus:ring-indigo-500 cursor-pointer focus:outline-none"
-          >
-            <option value="all">All Statuses</option>
-            <option value="AVAILABLE">AVAILABLE</option>
-            <option value="OCCUPIED">OCCUPIED</option>
-            <option value="RESERVED">RESERVED</option>
-            <option value="CLEANING">CLEANING</option>
-            <option value="OUT_OF_SERVICE">OUT OF SERVICE</option>
-          </select>
-        </div>
 
         {/* View Mode & Add Button */}
         <div className="flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-3 md:pt-0">
@@ -461,7 +430,7 @@ export default function TablesPage() {
           <div className="space-y-1">
             <h3 className="text-md font-bold text-slate-900">No Dining Tables Found</h3>
             <p className="text-sm text-slate-500">
-              {searchTerm || branchFilter !== "all" || statusFilter !== "all"
+              {searchTerm || statusFilter !== "all"
                 ? "No tables match the current search filters."
                 : "Get started by adding your dining tables layout."}
             </p>
@@ -488,7 +457,6 @@ export default function TablesPage() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <h3 className="text-md font-bold text-slate-900">{table.tableName}</h3>
-                    <p className="text-xs text-slate-400">Branch: {table.branch?.name}</p>
                   </div>
                   <span className="h-8 w-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
                     #{table.tableNumber}
@@ -575,7 +543,6 @@ export default function TablesPage() {
                 <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-semibold">
                   <th className="px-6 py-3">Number</th>
                   <th className="px-6 py-3">Display Name</th>
-                  <th className="px-6 py-3">Branch Location</th>
                   <th className="px-6 py-3">Capacity</th>
                   <th className="px-6 py-3">Notes</th>
                   <th className="px-6 py-3">Status</th>
@@ -587,7 +554,6 @@ export default function TablesPage() {
                   <tr key={table.id} className={`hover:bg-slate-50/50 ${!table.isActive ? "opacity-60" : ""}`}>
                     <td className="px-6 py-4 font-bold text-slate-800">#{table.tableNumber}</td>
                     <td className="px-6 py-4 font-semibold text-slate-900">{table.tableName}</td>
-                    <td className="px-6 py-4 text-slate-500">{table.branch?.name}</td>
                     <td className="px-6 py-4 text-slate-600">{table.seatingCapacity} seats</td>
                     <td className="px-6 py-4 text-slate-400 italic text-xs max-w-[150px] truncate">{table.notes || "-"}</td>
                     <td className="px-6 py-4">
@@ -699,13 +665,7 @@ export default function TablesPage() {
               placeholder="e.g. 5"
               min="1"
             />
-            <Select
-              label="Assigned Branch *"
-              value={branchId}
-              onChange={(e) => setBranchId(e.target.value)}
-              error={errors.branchId}
-              options={branches.map((b) => ({ value: b.id, label: b.name }))}
-            />
+
             <Input
               label="Seating Capacity *"
               type="number"

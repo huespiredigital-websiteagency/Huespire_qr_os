@@ -6,6 +6,17 @@ import { useCustomerStore } from "../../../lib/store/customer-store";
 import { getCustomerTableSession } from "../../../lib/api/customer";
 import { getSocket } from "../../../lib/socket";
 import Link from "next/link";
+import {
+  ClipboardList,
+  Clock,
+  ChefHat,
+  CheckCircle2,
+  XCircle,
+  Bell,
+  AlertTriangle,
+  Hash,
+  ArrowRight,
+} from "lucide-react";
 
 export default function MyOrdersPage() {
   const searchParams = useSearchParams();
@@ -77,119 +88,202 @@ export default function MyOrdersPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 animate-pulse">
-        <div className="h-7 w-1/3 bg-neutral-850 rounded"></div>
-        <div className="h-32 w-full bg-neutral-850 rounded-3xl"></div>
-        <div className="h-32 w-full bg-neutral-850 rounded-3xl"></div>
+      <div className="min-h-screen bg-[#faf9f6] p-5 space-y-4 animate-pulse">
+        <div className="h-6 w-1/3 bg-slate-200/60 rounded-lg" />
+        <div className="h-4 w-64 bg-slate-200/60 rounded-lg" />
+        <div className="mt-6 space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-36 w-full bg-white border border-neutral-100 rounded-3xl animate-pulse" />
+          ))}
+        </div>
       </div>
     );
   }
 
   const currency = restaurant?.currency || "INR";
-  const theme = restaurant?.theme || "dark";
-  const isDark = theme === "dark";
+  const theme = restaurant?.theme || "light";
 
   const orders = session?.orders
     ? [...session.orders].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     : [];
 
-  const getStatusBadge = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
       case "PENDING":
-        return <span className="px-2.5 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-[10px] font-bold">⏳ Sent to Kitchen</span>;
+        return {
+          icon: <Clock className="w-3 h-3" />,
+          label: "Kitchen Sent",
+          bgClass: "bg-amber-50 text-amber-700 border-amber-100",
+          accentBorder: "border-l-amber-500",
+          animate: "",
+        };
       case "ACCEPTED":
       case "PREPARING":
-        return <span className="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full text-[10px] font-bold animate-pulse">🍳 Preparing</span>;
+        return {
+          icon: <ChefHat className="w-3 h-3" />,
+          label: "Preparing",
+          bgClass: "bg-blue-50 text-blue-700 border-blue-100",
+          accentBorder: "border-l-blue-500",
+          animate: "animate-pulse",
+        };
       case "READY":
-        return <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-bold animate-bounce">🔔 Ready for Pickup</span>;
+        return {
+          icon: <Bell className="w-3 h-3" />,
+          label: "Ready!",
+          bgClass: "bg-emerald-50 text-emerald-850 border-emerald-100",
+          accentBorder: "border-l-emerald-500",
+          animate: "",
+        };
       case "SERVED":
-        return <span className="px-2.5 py-1 bg-neutral-800 text-neutral-400 border border-neutral-700/30 rounded-full text-[10px] font-bold">✨ Served</span>;
+        return {
+          icon: <CheckCircle2 className="w-3 h-3" />,
+          label: "Served",
+          bgClass: "bg-slate-50 text-slate-500 border-neutral-200",
+          accentBorder: "border-l-slate-400",
+          animate: "",
+        };
       case "CANCELLED":
-        return <span className="px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full text-[10px] font-bold">❌ Cancelled</span>;
+        return {
+          icon: <XCircle className="w-3 h-3" />,
+          label: "Cancelled",
+          bgClass: "bg-red-50 text-red-700 border-red-100",
+          accentBorder: "border-l-red-500",
+          animate: "",
+        };
       default:
-        return <span className="px-2.5 py-1 bg-neutral-800 text-neutral-400 rounded-full text-[10px] font-bold">{status}</span>;
+        return {
+          icon: <Clock className="w-3 h-3" />,
+          label: status,
+          bgClass: "bg-slate-50 text-slate-500 border-neutral-200",
+          accentBorder: "border-l-slate-400",
+          animate: "",
+        };
     }
   };
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Title */}
-      <div className="border-b border-neutral-800/10 dark:border-neutral-800 pb-4 flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl font-black">Table Orders</h1>
-          <p className={`text-xs ${isDark ? "text-neutral-400" : "text-neutral-500"} mt-0.5`}>
-            Real-time tracking of all orders placed at your table session.
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] text-emerald-400 font-bold">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          LIVE
-        </div>
-      </div>
-
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-xs">
-          ⚠️ {error}
-        </div>
-      )}
-
-      {orders.length === 0 ? (
-        <div className="text-center py-16 space-y-5">
-          <div className="text-5xl">🍽️</div>
-          <div className="space-y-1">
-            <h3 className="font-extrabold text-sm text-neutral-300">No Orders Placed Yet</h3>
-            <p className="text-neutral-500 text-xs max-w-[200px] mx-auto leading-normal">
-              No orders have been submitted for Table {table?.tableNumber || "this session"}.
+    <div className="min-h-screen bg-[#faf9f6] text-slate-800 font-sans pb-10">
+      {/* Header */}
+      <div className="px-5 pt-6 pb-4">
+        <div className="flex items-start justify-between">
+          <div className="space-y-0.5">
+            <h1 className="text-xl font-black text-slate-850 tracking-tight">
+              Table Orders
+            </h1>
+            <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+              Real-time updates for Table {table?.tableNumber || "—"}
             </p>
           </div>
-          <Link
-            href={`/menu?token=${token}`}
-            className="inline-block bg-amber-500 hover:bg-amber-400 text-neutral-950 font-black px-6 py-3 rounded-xl text-xs transition-all hover:scale-[1.01]"
-          >
-            Start Ordering
-          </Link>
+          <div className="flex items-center gap-1 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
+            </span>
+            <span className="text-[9px] font-extrabold text-[#0f5132] uppercase tracking-wider">
+              Live Sync
+            </span>
+          </div>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {orders.map((order) => (
-            <div
-              key={order.id}
-              className={`p-5 rounded-3xl border space-y-3 ${
-                isDark ? "bg-neutral-900/40 border-neutral-800" : "bg-white border-neutral-100 shadow-sm"
-              }`}
-            >
-              <div className="flex justify-between items-center border-b border-neutral-800/10 dark:border-neutral-800 pb-3">
-                <div className="flex flex-col">
-                  <span className="font-extrabold text-sm text-neutral-200">{order.orderNumber}</span>
-                  <span className="text-[10px] text-neutral-500">
-                    {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </div>
-                {getStatusBadge(order.orderStatus)}
-              </div>
+        <div className="mt-4 h-px bg-neutral-100" />
+      </div>
 
-              {/* Items List */}
-              <div className="space-y-2 py-1">
-                {order.orderItems?.map((item: any) => (
-                  <div key={item.id} className="flex justify-between items-center text-xs">
-                    <span className="text-neutral-300 font-medium">
-                      {item.quantity}x {item.menuItem?.name || "Item"}
-                    </span>
-                    <span className="text-neutral-400 font-semibold">
-                      {currency} {Number(item.subtotal).toFixed(2)}
+      <div className="px-4 pb-8 space-y-4 animate-fade-up">
+        {/* Error */}
+        {error && (
+          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-2xl">
+            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+            <span className="text-xs text-red-600 font-semibold">{error}</span>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {orders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-5 bg-white border border-neutral-100 rounded-[28px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.015)]">
+            <div className="w-16 h-16 rounded-full bg-[#0f5132]/8 flex items-center justify-center">
+              <ClipboardList className="w-6.5 h-6.5 text-[#0f5132]" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="font-extrabold text-sm text-slate-800">
+                No Orders Placed Yet
+              </h3>
+              <p className="text-slate-400 text-xs max-w-[220px] mx-auto leading-relaxed font-semibold">
+                No orders have been submitted for Table {table?.tableNumber || "this session"}.
+              </p>
+            </div>
+            <Link
+              href={`/menu?token=${token}`}
+              className="inline-flex items-center gap-2 bg-[#0f5132] hover:bg-[#0d472c] text-white font-extrabold px-6 py-3 rounded-2xl text-xs transition-all duration-200 active:scale-[0.97] shadow-sm shadow-[#0f5132]/10"
+            >
+              Start Ordering
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3.5">
+            {orders.map((order: any) => {
+              const config = getStatusConfig(order.orderStatus);
+              return (
+                <div
+                  key={order.id}
+                  className={`bg-white border border-neutral-100 rounded-[22px] overflow-hidden border-l-[3.5px] ${config.accentBorder} transition-all duration-200 shadow-[0_6px_20px_rgba(0,0,0,0.01)] hover:border-neutral-200`}
+                >
+                  {/* Order Header */}
+                  <div className="px-4 pt-4 pb-3 flex items-center justify-between bg-slate-50/20">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 text-slate-700">
+                        <Hash className="w-3.5 h-3.5 text-[#0f5132]/50" />
+                        <span className="font-bold text-sm">{order.orderNumber}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-semibold">
+                        {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 border rounded-full text-[9px] font-extrabold uppercase tracking-wider ${config.bgClass} ${config.animate}`}
+                    >
+                      {config.icon}
+                      {config.label}
                     </span>
                   </div>
-                ))}
-              </div>
 
-              <div className="border-t border-neutral-800/10 dark:border-neutral-800 pt-3 flex justify-between items-center text-xs">
-                <span className="text-neutral-500 font-semibold">Ticket Total</span>
-                <span className="font-black text-amber-500">{currency} {Number(order.totalAmount).toFixed(2)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+                  {/* Divider */}
+                  <div className="h-px bg-neutral-100" />
+
+                  {/* Items List */}
+                  <div className="px-4 py-3 space-y-2">
+                    {order.orderItems?.map((item: any) => (
+                      <div key={item.id} className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-2 text-slate-700">
+                          <span className="w-5 h-5 rounded-md bg-[#0f5132]/6 border border-[#0f5132]/10 flex items-center justify-center text-[10px] font-extrabold text-[#0f5132]">
+                            {item.quantity}
+                          </span>
+                          <span className="font-semibold">
+                            {item.menuItem?.name || "Item"}
+                          </span>
+                        </div>
+                        <span className="text-slate-400 font-bold tabular-nums">
+                          {currency} {Number(item.subtotal).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Order Total */}
+                  <div className="h-px bg-neutral-100" />
+                  <div className="px-4 py-3 flex justify-between items-center bg-slate-50/30">
+                    <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
+                      Ticket Total
+                    </span>
+                    <span className="text-sm font-black text-[#0f5132] tabular-nums">
+                      {currency} {Number(order.totalAmount).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -24,16 +24,22 @@ export class MenuImagesService {
       throw new NotFoundException(`Menu item with ID ${menuItemId} not found`);
     }
 
-    const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";
-    const imageUrl = `${backendUrl}/uploads/${file.filename}`;
+    // Limit to exactly 1 photo per menu item by deleting any existing ones first
+    const existingImage = await this.prisma.menuImage.findFirst({
+      where: { menuItemId, restaurantId }
+    });
 
-    // If this is set to primary, unset others
-    if (isPrimary) {
-      await this.prisma.menuImage.updateMany({
-        where: { menuItemId, restaurantId },
-        data: { isPrimary: false }
+    if (existingImage) {
+      if (fs.existsSync(existingImage.imagePath)) {
+        fs.unlinkSync(existingImage.imagePath);
+      }
+      await this.prisma.menuImage.delete({
+        where: { id: existingImage.id }
       });
     }
+
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";
+    const imageUrl = `${backendUrl}/uploads/${file.filename}`;
 
     return this.prisma.menuImage.create({
       data: {

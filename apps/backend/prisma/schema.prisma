@@ -73,7 +73,6 @@ model Plan {
   setupFee            Decimal        @db.Decimal(10, 2)
   monthlyPrice        Decimal        @db.Decimal(10, 2)
   maxTables           Int            @default(20)
-  maxBranches         Int            @default(1)
   maxStaff            Int            @default(5)
   monthlyEmailLimit   Int            @default(1000)
   customDomain        Boolean        @default(false)
@@ -104,7 +103,6 @@ model Subscription {
   monthlyPrice        Decimal            @db.Decimal(10, 2)
   setupFee            Decimal            @db.Decimal(10, 2)
   maxTables           Int                @default(20)
-  maxBranches         Int                @default(1)
   maxStaff            Int                @default(5)
   monthlyEmailLimit   Int                @default(1000)
   currentEmailUsage   Int                @default(0)
@@ -142,7 +140,6 @@ model Restaurant {
   deletedAt      DateTime?
   
   users          User[]
-  branches       Branch[]
   tables         Table[]
   qrCodes        QRCode[]
   categories     Category[]
@@ -184,43 +181,7 @@ model RestaurantSettings {
   @@map("restaurant_settings")
 }
 
-model Branch {
-  id             String      @id @default(uuid())
-  restaurantId   String
-  restaurant     Restaurant  @relation(fields: [restaurantId], references: [id])
-  name           String
-  code           String
-  phone          String?
-  email          String?
-  address        String
-  city           String
-  state          String
-  country        String
-  postalCode     String?
-  latitude       Decimal?    @db.Decimal(10, 8)
-  longitude      Decimal?    @db.Decimal(11, 8)
-  openingTime    String      @default("09:00")
-  closingTime    String      @default("22:00")
-  isMainBranch   Boolean     @default(false)
-  isActive       Boolean     @default(true)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  deletedAt      DateTime?
 
-  tables         Table[]
-  orders         Order[]
-  qrCodes        QRCode[]
-  tableSessions  TableSession[]
-  bills          Bill[]
-  payments       Payment[]
-
-  @@unique([restaurantId, code])
-  @@index([restaurantId])
-  @@index([isActive])
-  @@index([restaurantId, isActive])
-  @@index([restaurantId, deletedAt])
-  @@map("branches")
-}
 
 model Role {
   id           String    @id @default(uuid())
@@ -316,8 +277,6 @@ model Table {
   id              String      @id @default(uuid())
   restaurantId    String
   restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
-  branchId        String
-  branch          Branch      @relation(fields: [branchId], references: [id])
   tableNumber     Int
   tableName       String
   seatingCapacity Int         @default(4)
@@ -333,14 +292,11 @@ model Table {
   orders          Order[]
   tableSessions   TableSession[]
 
-  @@unique([branchId, tableNumber])
+  @@unique([restaurantId, tableNumber])
   @@index([restaurantId])
-  @@index([branchId])
   @@index([status])
-  @@index([restaurantId, branchId])
   @@index([restaurantId, status])
   @@index([restaurantId, deletedAt])
-  @@index([restaurantId, branchId, status])
   @@map("tables")
 }
 
@@ -348,8 +304,6 @@ model QRCode {
   id             String      @id @default(uuid())
   restaurantId   String
   restaurant     Restaurant  @relation(fields: [restaurantId], references: [id])
-  branchId       String
-  branch         Branch      @relation(fields: [branchId], references: [id])
   tableId        String      @unique
   table          Table       @relation("TableQRCode", fields: [tableId], references: [id])
   qrToken        String      @unique
@@ -362,7 +316,6 @@ model QRCode {
   updatedAt      DateTime    @updatedAt
 
   @@index([restaurantId])
-  @@index([branchId])
   @@index([qrToken])
   @@map("qr_codes")
 }
@@ -552,8 +505,6 @@ model Order {
   id            String        @id @default(uuid())
   restaurantId  String
   restaurant    Restaurant    @relation(fields: [restaurantId], references: [id])
-  branchId      String
-  branch        Branch        @relation(fields: [branchId], references: [id])
   tableId       String
   table         Table         @relation(fields: [tableId], references: [id])
   customerId    String
@@ -660,8 +611,6 @@ model Bill {
   id             String       @id @default(uuid())
   restaurantId   String
   restaurant     Restaurant   @relation(fields: [restaurantId], references: [id])
-  branchId       String
-  branch         Branch       @relation(fields: [branchId], references: [id])
   tableSessionId String
   tableSession   TableSession @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
   billNumber     String
@@ -677,7 +626,6 @@ model Bill {
 
   @@unique([restaurantId, billNumber])
   @@index([restaurantId])
-  @@index([branchId])
   @@index([tableSessionId])
   @@index([status])
   @@map("bills")
@@ -687,8 +635,6 @@ model Payment {
   id                   String        @id @default(uuid())
   restaurantId         String
   restaurant           Restaurant    @relation(fields: [restaurantId], references: [id])
-  branchId             String
-  branch               Branch        @relation(fields: [branchId], references: [id])
   tableSessionId       String
   tableSession         TableSession  @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
   billId               String?
@@ -708,7 +654,6 @@ model Payment {
   createdAt            DateTime      @default(now())
 
   @@index([restaurantId])
-  @@index([branchId])
   @@index([tableSessionId])
   @@index([billId])
   @@index([receivedById])
@@ -781,8 +726,6 @@ model TableSession {
   id             String             @id @default(uuid())
   restaurantId   String
   restaurant     Restaurant         @relation(fields: [restaurantId], references: [id])
-  branchId       String
-  branch         Branch             @relation(fields: [branchId], references: [id])
   tableId        String
   table          Table              @relation(fields: [tableId], references: [id])
   sessionNumber  String
@@ -800,11 +743,9 @@ model TableSession {
   payments       Payment[]
 
   @@index([restaurantId])
-  @@index([branchId])
   @@index([tableId])
   @@index([status])
   @@index([restaurantId, status])
-  @@index([restaurantId, branchId, status])
   @@index([tableId, status])
   @@map("table_sessions")
 }

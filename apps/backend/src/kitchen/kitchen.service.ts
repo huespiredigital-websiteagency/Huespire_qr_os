@@ -15,7 +15,6 @@ export class KitchenService {
   async getKitchenOrders(restaurantId: string, query: FilterKitchenOrdersDto) {
     const where: any = { restaurantId };
 
-    if (query.branchId) where.branchId = query.branchId;
     if (query.tableId) where.tableId = query.tableId;
 
     if (query.orderStatus) {
@@ -36,7 +35,6 @@ export class KitchenService {
       where,
       include: {
         table: true,
-        branch: true,
         customer: true,
         session: true,
         orderItems: {
@@ -113,7 +111,6 @@ export class KitchenService {
       where: { id: orderId, restaurantId },
       include: {
         table: true,
-        branch: true,
         customer: true,
         session: true,
         orderItems: {
@@ -155,7 +152,6 @@ export class KitchenService {
 
     this.eventsGateway.emitOrderStatusChanged(
       order.restaurantId,
-      order.branchId,
       order.sessionId || "",
       order.tableId,
       updated.id,
@@ -187,7 +183,6 @@ export class KitchenService {
 
     this.eventsGateway.emitOrderStatusChanged(
       order.restaurantId,
-      order.branchId,
       order.sessionId || "",
       order.tableId,
       updated.id,
@@ -213,17 +208,25 @@ export class KitchenService {
         orderStatus: OrderStatus.READY,
         readyAt: new Date(),
         readyById: user.userId
+      },
+      include: {
+        table: true
       }
     });
 
     this.eventsGateway.emitOrderStatusChanged(
       order.restaurantId,
-      order.branchId,
       order.sessionId || "",
       order.tableId,
       updated.id,
       "READY",
-      { orderId: updated.id, status: "READY" }
+      {
+        orderId: updated.id,
+        status: "READY",
+        orderNumber: updated.orderNumber,
+        tableNumber: updated.table?.tableNumber,
+        tableName: updated.table?.tableName
+      }
     );
 
     return { success: true, message: "Order marked ready for pickup.", orderId: updated.id, status: updated.orderStatus };
@@ -248,7 +251,6 @@ export class KitchenService {
 
     this.eventsGateway.emitOrderCancelled(
       order.restaurantId,
-      order.branchId,
       order.sessionId || "",
       updated.id,
       updated.rejectionReason || "Rejected"

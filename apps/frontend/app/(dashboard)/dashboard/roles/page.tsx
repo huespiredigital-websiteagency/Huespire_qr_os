@@ -46,11 +46,10 @@ export default function RolesPage() {
     );
   }
 
-  // Pre-mapped permissions overview based on role codes
   const rolePermissionsMap: Record<string, string[]> = {
     SUPER_ADMIN: ["Platform Plans Configure", "System Metrics Audit", "Super Administrator Override", "Role Permission Audits"],
-    OWNER: ["Complete Store Control", "Billing & Subscription Upgrade", "Branch CRUD Operations", "Staff Invite & Revocation", "Restaurant Settings Profile"],
-    MANAGER: ["Branch Details Settings", "Staff Info Adjustments", "Menu & Categories Access", "Table Status Modifications", "Orders Tracking"],
+    OWNER: ["Complete Store Control", "Billing & Subscription Upgrade", "Staff Invite & Revocation", "Restaurant Settings Profile"],
+    MANAGER: ["Staff Info Adjustments", "Menu & Categories Access", "Table Status Modifications", "Orders Tracking"],
     WAITER: ["Table Seat Assignment", "Orders Creating", "Menu Checking", "Order Status View"],
     KITCHEN: ["Menu Status Toggling", "Preparing Orders Status", "Orders Cooking Queue"],
     CASHIER: ["Payments Processing", "Receipts Generating", "Orders Settlements"],

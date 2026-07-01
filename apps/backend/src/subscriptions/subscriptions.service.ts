@@ -65,7 +65,6 @@ export class SubscriptionsService {
         monthlyPrice: plan.monthlyPrice,
         setupFee: plan.setupFee,
         maxTables: plan.maxTables,
-        maxBranches: plan.maxBranches,
         maxStaff: plan.maxStaff,
         monthlyEmailLimit: plan.monthlyEmailLimit,
       },
@@ -75,7 +74,7 @@ export class SubscriptionsService {
 
   async hasQuota(
     restaurantId: string,
-    limitType: "tables" | "branches" | "staff",
+    limitType: "tables" | "staff",
   ): Promise<{ allowed: boolean; current: number; max: number }> {
     const subscription = await this.prisma.subscription.findUnique({
       where: { restaurantId },
@@ -93,11 +92,6 @@ export class SubscriptionsService {
         where: { restaurantId, deletedAt: null },
       });
       max = subscription.maxTables;
-    } else if (limitType === "branches") {
-      current = await this.prisma.branch.count({
-        where: { restaurantId, deletedAt: null },
-      });
-      max = subscription.maxBranches;
     } else if (limitType === "staff") {
       current = await this.prisma.user.count({
         where: { restaurantId, deletedAt: null },
