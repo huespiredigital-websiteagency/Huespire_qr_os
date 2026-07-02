@@ -9,6 +9,17 @@ export class QRService {
   constructor(private readonly prisma: PrismaService) {}
 
   private getRedirectionUrl(restaurant: any, token: string): string {
+    const appUrl = process.env.APP_URL || "http://localhost:3000";
+    const isLocal = appUrl.includes("localhost") || appUrl.includes("127.0.0.1") || appUrl.includes("nip.io");
+
+    if (isLocal) {
+      const baseHost = appUrl.replace(/^https?:\/\//, "");
+      if (baseHost.includes("localhost")) {
+        return `http://${restaurant.subdomain}.localhost:3000/menu/${token}`;
+      }
+      return `http://${baseHost}/menu/${token}`;
+    }
+
     const domain = restaurant.domain || `${restaurant.subdomain}.huespire.digital`;
     return `https://${domain}/menu/${token}`;
   }
@@ -134,18 +145,11 @@ export class QRService {
       throw new NotFoundException("QR Code not found");
     }
 
-    // Reconstruct the redirection URL dynamically to adapt to changing network IPs
     const restaurant = qrCode.table?.restaurant;
     let redirectUrl = qrCode.qrUrl;
     
     if (restaurant) {
-      const appUrl = process.env.APP_URL || "http://localhost:3000";
-      const baseHost = appUrl.replace(/^https?:\/\//, "");
-      if (baseHost.includes("localhost") || baseHost.includes("127.0.0.1") || baseHost.includes("nip.io")) {
-        redirectUrl = `http://${baseHost}/qr/${token}`;
-      } else {
-        redirectUrl = `http://${restaurant.subdomain}.${baseHost}/qr/${token}`;
-      }
+      redirectUrl = this.getRedirectionUrl(restaurant, token);
     }
 
     if (format === "svg") {
