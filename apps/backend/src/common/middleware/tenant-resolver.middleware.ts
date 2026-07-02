@@ -12,7 +12,17 @@ export class TenantResolverMiddleware implements NestMiddleware {
     const host = hostHeader.split(":")[0].toLowerCase();
 
     // Skip tenant resolution for platform/global paths or health checks if needed
-    if (host === "localhost" || host === "127.0.0.1" || host === "huespire.com" || host === "app.restaurantos.com" || host.endsWith(".nip.io")) {
+    if (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "huespire.com" ||
+      host === "huespire.digital" ||
+      host === "testing.huespire.digital" ||
+      host === "api-testing.huespire.digital" ||
+      host === "api.huespire.digital" ||
+      host === "app.restaurantos.com" ||
+      host.endsWith(".nip.io")
+    ) {
       // Platform operations - might be Super Admin or general requests
       return next();
     }
@@ -20,12 +30,16 @@ export class TenantResolverMiddleware implements NestMiddleware {
     let subdomain = "";
     let customDomain = "";
 
-    // Base domain to check (e.g., huespire.com or localhost)
-    // For development, we allow .localhost or .huespire.com subdomains
+    // Base domain to check (e.g., huespire.com, huespire.digital, or localhost)
+    // We allow subdomains on these base hosts
     if (host.endsWith(".localhost")) {
       subdomain = host.replace(".localhost", "");
     } else if (host.endsWith(".huespire.com")) {
       subdomain = host.replace(".huespire.com", "");
+    } else if (host.endsWith(".testing.huespire.digital")) {
+      subdomain = host.replace(".testing.huespire.digital", "");
+    } else if (host.endsWith(".huespire.digital")) {
+      subdomain = host.replace(".huespire.digital", "");
     } else {
       customDomain = host;
     }
