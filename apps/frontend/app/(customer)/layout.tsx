@@ -36,8 +36,13 @@ function CustomerStateLoader({ children }: { children: React.ReactNode }) {
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
   const [activeSessionData, setActiveSessionData] = useState<any>(null);
 
-  // Get token from URL
-  const tokenFromUrl = searchParams.get("token");
+  // Get token from URL query or path segments (e.g. /menu/[token])
+  const tokenFromUrl = searchParams.get("token") || (() => {
+    if (!pathname) return null;
+    const parts = pathname.split("/");
+    const hexToken = parts.find((part) => /^[a-fA-F0-9]{32}$/.test(part));
+    return hexToken || null;
+  })();
 
   useEffect(() => {
     if (tokenFromUrl) {
