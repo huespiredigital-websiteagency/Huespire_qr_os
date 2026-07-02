@@ -1,6 +1,10 @@
 import Link from "next/link";
 
 export default function HomePage() {
+  const domain = process.env.NEXT_PUBLIC_DOMAIN || "localhost:3000";
+  const protocol = domain.includes("localhost") ? "http" : "https";
+  const demoUrl = `${protocol}://pizza.${domain}`;
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6">
       <div className="w-full max-w-4xl text-center space-y-8">
@@ -19,7 +23,7 @@ export default function HomePage() {
             Staff Dashboard Login
           </Link>
           <a
-            href="http://pizza.localhost:3000"
+            href={demoUrl}
             className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-lg font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition"
           >
             Demo Restaurant Subdomain

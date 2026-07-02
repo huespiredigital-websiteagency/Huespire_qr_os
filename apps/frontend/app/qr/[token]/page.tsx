@@ -9,10 +9,8 @@ export default async function QRScanPage({ params }: { params: Promise<{ token: 
   let data = null;
   let errorMsg = null;
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-  // Use 127.0.0.1 on the server to bypass DNS loopback protection and firewalls
-  const fetchUrl = `http://127.0.0.1:5000/qr/validate/${token}`;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+  const fetchUrl = `${API_URL}/qr/validate/${token}`;
 
   try {
     const res = await fetch(fetchUrl, {

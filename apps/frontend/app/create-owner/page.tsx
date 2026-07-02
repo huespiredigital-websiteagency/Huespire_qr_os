@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Mail, Lock, User, Sparkles, Loader2, CheckCircle2, ArrowRight, ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import axios from "axios";
+import { apiClient } from "../../lib/api-client";
 
 export default function CreateOwnerPage() {
   const [email, setEmail] = useState("");
@@ -42,8 +42,7 @@ export default function CreateOwnerPage() {
     const finalName = name.trim() || "Test Owner";
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const res = await axios.post(`${API_URL}/auth/register`, {
+      const res = await apiClient.post("/auth/register", {
         name: finalName,
         email: email.trim(),
         password: password

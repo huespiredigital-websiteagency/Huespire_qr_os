@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { apiClient } from "../../../lib/api-client";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -18,7 +18,7 @@ export default function LoginPage() {
     const token = localStorage.getItem("accessToken");
     if (token) {
       setIsRedirecting(true);
-      router.replace("/dashboard");
+      router.push("/dashboard");
     } else {
       setMounted(true);
     }
@@ -31,7 +31,7 @@ export default function LoginPage() {
     setSuccess(null);
 
     try {
-      const response = await axios.post("http://localhost:5000/auth/login", {
+      const response = await apiClient.post("/auth/login", {
         email,
         password,
       });

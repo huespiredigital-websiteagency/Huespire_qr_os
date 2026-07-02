@@ -1,17 +1,6 @@
 import axios from "axios";
 
-const getApiUrl = () => {
-  const defaultUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-  if (typeof window !== "undefined") {
-    const hostname = window.location.hostname;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return "http://localhost:5000";
-    }
-  }
-  return defaultUrl;
-};
-
-export const API_URL = getApiUrl();
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
