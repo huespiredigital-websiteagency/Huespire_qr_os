@@ -57,6 +57,11 @@ export class UpdateRestaurantDto {
   @IsString()
   customDomain?: string;
 
+  @ApiProperty({ description: "Primary SaaS Domain name", example: "pizza.huespire.digital", required: false })
+  @IsOptional()
+  @IsString()
+  domain?: string;
+
   @ApiProperty({ description: "Timezone", example: "Asia/Kolkata", required: false })
   @IsOptional()
   @IsString()

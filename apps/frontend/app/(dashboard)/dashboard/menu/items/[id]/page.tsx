@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import { getCategories, createMenuItem, updateMenuItem, uploadMenuImage, deleteMenuImage } from "@/lib/api/menu";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
-import axios from "axios";
-import { getAuthHeaders } from "@/lib/api/menu";
-import { API_URL } from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 
 export default function MenuItemFormPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -48,7 +46,7 @@ export default function MenuItemFormPage({ params }: { params: Promise<{ id: str
 
       if (!isNew) {
         // Fetch item details directly
-        const res = await axios.get(`${API_URL}/menu-items/${id}`, { headers: getAuthHeaders() });
+        const res = await apiClient.get(`/menu-items/${id}`);
         const item = res.data.data;
         setFormData({
           name: item.name,

@@ -130,6 +130,7 @@ model Restaurant {
   coverImageUrl  String?
   subdomain      String              @unique
   customDomain   String?             @unique
+  domain         String?             @unique
   timezone       String              @default("Asia/Kolkata")
   currency       String              @default("INR")
   taxPercentage  Decimal             @default(0.00) @db.Decimal(5, 2)
@@ -159,6 +160,7 @@ model Restaurant {
   tableSessions  TableSession[]
 
   @@index([subdomain])
+  @@index([domain])
   @@index([email])
   @@index([isActive])
   @@index([deletedAt])

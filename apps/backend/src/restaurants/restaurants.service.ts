@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { UpdateRestaurantDto } from "./dto/update-restaurant.dto";
 
@@ -20,7 +20,8 @@ export class RestaurantsService {
   }
 
   async updateRestaurant(id: string, dto: UpdateRestaurantDto) {
-    const { timezone, currency, taxPercentage, ...rest } = dto;
+    const { timezone, currency, taxPercentage, domain, ...rest } = dto;
+    const cleanDomain = domain ? domain.toLowerCase().trim() : undefined;
 
     return this.prisma.$transaction(async (tx) => {
       // Check if restaurant exists first
@@ -29,10 +30,21 @@ export class RestaurantsService {
         throw new NotFoundException("Restaurant not found");
       }
 
+      // Validate domain uniqueness if domain is being updated
+      if (cleanDomain) {
+        const domainOwner = await tx.restaurant.findUnique({
+          where: { domain: cleanDomain }
+        });
+        if (domainOwner && domainOwner.id !== id) {
+          throw new BadRequestException("This domain is already registered to another restaurant.");
+        }
+      }
+
       await tx.restaurant.update({
         where: { id },
         data: {
           ...rest,
+          ...(cleanDomain !== undefined && { domain: cleanDomain }),
           ...(timezone && { timezone }),
           ...(currency && { currency }),
           ...(taxPercentage !== undefined && { taxPercentage }),

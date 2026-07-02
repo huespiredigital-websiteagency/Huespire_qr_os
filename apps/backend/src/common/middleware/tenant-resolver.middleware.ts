@@ -105,17 +105,40 @@ export class TenantResolverMiddleware implements NestMiddleware {
 
     let restaurant = null;
 
-    if (subdomain) {
+    // 1. Primary Lookup: Try exact domain field match
+    restaurant = await this.prisma.restaurant.findUnique({
+      where: { domain: host },
+      include: { settings: true }
+    });
+
+    // 2. Fallback Lookup: Try customDomain field match
+    if (!restaurant) {
       restaurant = await this.prisma.restaurant.findUnique({
-        where: { subdomain },
+        where: { customDomain: host },
         include: { settings: true }
       });
-    } else if (customDomain) {
+    }
+
+    // 3. Subdomain Fallback: Resolve using parsed subdomain parameter
+    if (!restaurant && subdomain) {
       restaurant = await this.prisma.restaurant.findFirst({
         where: {
           OR: [
-            { customDomain },
-            { subdomain: customDomain }
+            { subdomain },
+            { domain: { startsWith: `${subdomain}.` } }
+          ]
+        },
+        include: { settings: true }
+      });
+    }
+
+    // 4. Custom/Subdomain Fallback (Legacy)
+    if (!restaurant && customDomain) {
+      restaurant = await this.prisma.restaurant.findFirst({
+        where: {
+          OR: [
+            { subdomain: customDomain },
+            { customDomain: customDomain }
           ]
         },
         include: { settings: true }

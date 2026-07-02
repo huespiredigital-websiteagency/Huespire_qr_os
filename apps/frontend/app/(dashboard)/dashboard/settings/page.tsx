@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const [state, setState] = useState("");
   const [country, setCountry] = useState("");
   const [postalCode, setPostalCode] = useState("");
+  const [domain, setDomain] = useState("");
   const [timezone, setTimezone] = useState("Asia/Kolkata");
   const [currency, setCurrency] = useState("INR");
   const [taxPercentage, setTaxPercentage] = useState<number>(0);
@@ -45,6 +46,7 @@ export default function SettingsPage() {
           setState(r.state || "");
           setCountry(r.country || "");
           setPostalCode(r.postalCode || "");
+          setDomain(r.domain || "");
           
           // Settings are stored inside nested settings object
           if (r.settings) {
@@ -95,6 +97,7 @@ export default function SettingsPage() {
         state: state || null,
         country: country || null,
         postalCode: postalCode || null,
+        domain: domain || null,
         timezone,
         currency,
         taxPercentage: Number(taxPercentage),
@@ -189,6 +192,23 @@ export default function SettingsPage() {
                 onChange={(e) => setPhone(e.target.value)}
                 error={errors.phone}
                 placeholder="+919876543210"
+              />
+            </div>
+          </div>
+
+          {/* Domain Settings */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 uppercase tracking-wider">
+              Domain Settings
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                label="Restaurant Domain"
+                value={domain}
+                onChange={(e) => setDomain(e.target.value)}
+                error={errors.domain}
+                placeholder="pizza.huespire.digital"
+                helperText="Specify the domain or subdomain (e.g. pizza.huespire.digital) for public QR menu pages."
               />
             </div>
           </div>

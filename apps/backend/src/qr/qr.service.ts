@@ -8,13 +8,9 @@ import * as QRCodeLib from "qrcode";
 export class QRService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private getRedirectionUrl(subdomain: string, token: string): string {
-    const appUrl = process.env.APP_URL || "http://localhost:3000";
-    const baseHost = appUrl.replace(/^https?:\/\//, "");
-    if (baseHost.includes("localhost") || baseHost.includes("127.0.0.1") || baseHost.includes("nip.io")) {
-      return `http://${baseHost}/qr/${token}`;
-    }
-    return `http://${subdomain}.${baseHost}/qr/${token}`;
+  private getRedirectionUrl(restaurant: any, token: string): string {
+    const domain = restaurant.domain || `${restaurant.subdomain}.huespire.digital`;
+    return `https://${domain}/menu/${token}`;
   }
 
   async generate(restaurantId: string, tableId: string): Promise<QRCode> {
@@ -27,7 +23,7 @@ export class QRService {
     }
 
     const token = crypto.randomBytes(16).toString("hex");
-    const qrUrl = this.getRedirectionUrl(restaurant.subdomain, token);
+    const qrUrl = this.getRedirectionUrl(restaurant, token);
 
     return this.prisma.qRCode.create({
       data: {
@@ -60,7 +56,7 @@ export class QRService {
     }
 
     const token = crypto.randomBytes(16).toString("hex");
-    const qrUrl = this.getRedirectionUrl(restaurant.subdomain, token);
+    const qrUrl = this.getRedirectionUrl(restaurant, token);
 
     return this.prisma.qRCode.update({
       where: { id: existing.id },
