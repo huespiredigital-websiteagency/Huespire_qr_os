@@ -58,13 +58,6 @@ export default function FoodDetailsPage() {
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
 
-  if (isQrToken) {
-    return (
-      <div className="min-h-screen bg-[#faf9f6] flex flex-col items-center justify-center p-6 text-slate-800 font-sans">
-        <Loader2 className="w-8 h-8 text-[#0f5132] animate-spin" />
-      </div>
-    );
-  }
 
   useEffect(() => {
     if (!token || !id) return;
@@ -122,6 +115,14 @@ export default function FoodDetailsPage() {
 
     return (basePrice + addonsPrice) * quantity;
   }, [item, selectedVariantId, selectedAddonIds, quantity, availableAddons]);
+
+  if (isQrToken) {
+    return (
+      <div className="min-h-screen bg-[#faf9f6] flex flex-col items-center justify-center p-6 text-slate-800 font-sans">
+        <Loader2 className="w-8 h-8 text-[#0f5132] animate-spin" />
+      </div>
+    );
+  }
 
   const handleAddonToggle = (addonId: string) => {
     setSelectedAddonIds((prev) =>

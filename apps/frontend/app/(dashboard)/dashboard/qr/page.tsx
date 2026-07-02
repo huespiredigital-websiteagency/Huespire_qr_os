@@ -497,6 +497,13 @@ export default function QRCodesPage() {
                       </span>
                     </div>
 
+                    <div className="text-[10px] bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg text-slate-500 break-all select-all font-mono">
+                      {restaurant?.domain 
+                        ? `https://${restaurant.domain}/menu/${qr.qrToken}`
+                        : `${typeof window !== "undefined" ? window.location.protocol : "https:"}//${restaurant?.subdomain || "menu"}.${typeof window !== "undefined" ? window.location.host : "huespire.digital"}/menu/${qr.qrToken}`
+                      }
+                    </div>
+
                     {/* QR Code image embed */}
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-center justify-center aspect-square max-w-[160px] mx-auto relative group">
                       <img

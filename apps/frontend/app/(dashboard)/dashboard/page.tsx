@@ -164,9 +164,11 @@ export default function DashboardPage() {
             <Store className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Subdomain</p>
-            <p className="text-sm font-extrabold text-slate-900 truncate max-w-[150px]">
-              {restaurant?.subdomain}.huespire.com
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+              {restaurant?.domain ? "Restaurant Domain" : "Subdomain"}
+            </p>
+            <p className="text-sm font-extrabold text-slate-900 truncate max-w-[220px]" title={restaurant?.domain || `${restaurant?.subdomain}.huespire.digital`}>
+              {restaurant?.domain || `${restaurant?.subdomain}.huespire.digital`}
             </p>
           </div>
         </div>
