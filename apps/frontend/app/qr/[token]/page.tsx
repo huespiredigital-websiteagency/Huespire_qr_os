@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Sparkles, AlertTriangle, ArrowRight, Users, CircleCheckBig, Zap } from "lucide-react";
+import { getTenantDomain } from "../../../lib/api-client";
 
 // Server Component V2 (Warm Light Redesign)
 export default async function QRScanPage({ params }: { params: Promise<{ token: string }> }) {
@@ -13,8 +14,17 @@ export default async function QRScanPage({ params }: { params: Promise<{ token: 
   const fetchUrl = `${API_URL}/qr/validate/${token}`;
 
   try {
+    const tenantDomain = getTenantDomain();
+    const fetchHeaders: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+    if (tenantDomain) {
+      fetchHeaders["X-Tenant-Domain"] = tenantDomain;
+    }
+
     const res = await fetch(fetchUrl, {
-      cache: 'no-store'
+      cache: 'no-store',
+      headers: fetchHeaders
     });
     
     if (!res.ok) {

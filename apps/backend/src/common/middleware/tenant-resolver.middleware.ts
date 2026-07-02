@@ -6,40 +6,99 @@ import { PrismaService } from "../../prisma/prisma.service";
 export class TenantResolverMiddleware implements NestMiddleware {
   constructor(private readonly prisma: PrismaService) {}
 
-  async use(req: Request, res: Response, next: NextFunction) {
-    const hostHeader = req.headers.host || "";
-    // Remove port if present (e.g., localhost:5000 -> localhost)
-    const host = hostHeader.split(":")[0].toLowerCase();
+  private getHostname(urlString: string): string {
+    try {
+      if (!urlString.startsWith("http://") && !urlString.startsWith("https://")) {
+        urlString = "http://" + urlString;
+      }
+      const url = new URL(urlString);
+      return url.hostname.toLowerCase();
+    } catch {
+      return "";
+    }
+  }
 
-    // Skip tenant resolution for platform/global paths or health checks if needed
-    if (
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host === "huespire.com" ||
-      host === "huespire.digital" ||
-      host === "testing.huespire.digital" ||
-      host === "api-testing.huespire.digital" ||
-      host === "api.huespire.digital" ||
-      host === "app.restaurantos.com" ||
-      host.endsWith(".nip.io")
-    ) {
-      // Platform operations - might be Super Admin or general requests
+  async use(req: Request, res: Response, next: NextFunction) {
+    let host = "";
+
+    // 1. Preferred: X-Tenant-Domain header sent from Axios Client
+    const xTenantDomain = req.headers["x-tenant-domain"];
+    if (xTenantDomain) {
+      host = typeof xTenantDomain === "string" ? xTenantDomain : xTenantDomain[0];
+    }
+
+    // 2. Fallback: X-Forwarded-Host (from Nginx reverse proxy)
+    if (!host) {
+      const xForwardedHost = req.headers["x-forwarded-host"];
+      if (xForwardedHost) {
+        host = typeof xForwardedHost === "string" ? xForwardedHost : xForwardedHost[0];
+      }
+    }
+
+    // 3. Fallback: Origin Header
+    if (!host) {
+      const origin = req.headers["origin"];
+      if (origin) {
+        host = this.getHostname(typeof origin === "string" ? origin : origin[0]);
+      }
+    }
+
+    // 4. Fallback: Referer Header
+    if (!host) {
+      const referer = req.headers["referer"];
+      if (referer) {
+        host = this.getHostname(typeof referer === "string" ? referer : referer[0]);
+      }
+    }
+
+    // 5. Fallback: Host Header (Only if not requesting the API domain directly)
+    const apiDomains = [
+      "api.huespire.digital",
+      "api-testing.huespire.digital",
+      "localhost:5000",
+      "127.0.0.1:5000"
+    ];
+    const hostHeader = req.headers.host || "";
+    if (!host && !apiDomains.some(apiDom => hostHeader.toLowerCase().includes(apiDom))) {
+      host = hostHeader;
+    }
+
+    // Clean host by removing the port
+    if (host) {
+      host = host.split(":")[0].toLowerCase();
+    }
+
+    const platformDomains = [
+      "localhost",
+      "127.0.0.1",
+      "huespire.com",
+      "huespire.digital",
+      "testing.huespire.digital",
+      "api-testing.huespire.digital",
+      "api.huespire.digital",
+      "app.restaurantos.com"
+    ];
+
+    // Skip tenant resolution for platform/global paths or health checks
+    if (!host || platformDomains.includes(host) || host.endsWith(".nip.io")) {
       return next();
     }
 
     let subdomain = "";
     let customDomain = "";
 
-    // Base domain to check (e.g., huespire.com, huespire.digital, or localhost)
-    // We allow subdomains on these base hosts
-    if (host.endsWith(".localhost")) {
-      subdomain = host.replace(".localhost", "");
-    } else if (host.endsWith(".huespire.com")) {
-      subdomain = host.replace(".huespire.com", "");
-    } else if (host.endsWith(".testing.huespire.digital")) {
-      subdomain = host.replace(".testing.huespire.digital", "");
-    } else if (host.endsWith(".huespire.digital")) {
-      subdomain = host.replace(".huespire.digital", "");
+    // Base domain to check. Subdomains on these hosts map to tenant slug/subdomains.
+    const baseDomains = [
+      ".testing.huespire.digital",
+      ".huespire.digital",
+      ".huespire.com",
+      ".localhost"
+    ];
+
+    const matchedBase = baseDomains.find(base => host.endsWith(base));
+
+    if (matchedBase) {
+      subdomain = host.slice(0, -matchedBase.length);
     } else {
       customDomain = host;
     }
@@ -52,16 +111,18 @@ export class TenantResolverMiddleware implements NestMiddleware {
         include: { settings: true }
       });
     } else if (customDomain) {
-      restaurant = await this.prisma.restaurant.findUnique({
-        where: { customDomain },
+      restaurant = await this.prisma.restaurant.findFirst({
+        where: {
+          OR: [
+            { customDomain },
+            { subdomain: customDomain }
+          ]
+        },
         include: { settings: true }
       });
     }
 
     if (!restaurant) {
-      // If we couldn't resolve a restaurant, check if this is a path that requires one.
-      // In a strict tenant API, we block requests that attempt to access custom/subdomains
-      // which do not match any tenant in our system.
       throw new NotFoundException(`Restaurant not found for host: ${host}`);
     }
 
@@ -69,7 +130,7 @@ export class TenantResolverMiddleware implements NestMiddleware {
       throw new BadRequestException("Restaurant access is currently unavailable.");
     }
 
-    // Attach to request
+    // Attach restaurant details to the request
     req["restaurant"] = restaurant;
     req["restaurantId"] = restaurant.id;
 

@@ -2,6 +2,20 @@ import axios from "axios";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
+export const getTenantDomain = (): string => {
+  if (typeof window !== "undefined") {
+    return window.location.host; // e.g., pizza.localhost:3000 or pizza.huespire.digital
+  }
+  // Fallback for SSR / Server Components
+  try {
+    const { headers } = require("next/headers");
+    const hostHeader = headers().get("host");
+    return hostHeader || "";
+  } catch {
+    return "";
+  }
+};
+
 export const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
@@ -9,9 +23,16 @@ export const apiClient = axios.create({
   },
 });
 
-// Request Interceptor: Inject JWT token from localStorage
+// Request Interceptor: Inject Tenant Domain and Auth Token
 apiClient.interceptors.request.use(
   (config) => {
+    // 1. Inject X-Tenant-Domain dynamically for backend multi-tenancy
+    const tenantDomain = getTenantDomain();
+    if (tenantDomain) {
+      config.headers["X-Tenant-Domain"] = tenantDomain;
+    }
+
+    // 2. Inject JWT token from localStorage on the client side
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("accessToken");
       if (token) {
@@ -34,7 +55,6 @@ apiClient.interceptors.response.use(
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");
-        // Force redirect to login page only if not already there
         if (!window.location.pathname.startsWith("/login")) {
           window.location.href = "/login?expired=true";
         }
