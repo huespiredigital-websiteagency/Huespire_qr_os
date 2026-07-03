@@ -702,17 +702,17 @@ model Notification {
 }
 
 model AuditLog {
-  id           String     @id @default(uuid())
-  restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  id           String      @id @default(uuid())
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   userId       String?
-  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   action       String
   entity       String
   entityId     String?
   ipAddress    String?
   userAgent    String?
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime    @default(now())
 
   @@index([restaurantId])
   @@index([userId])

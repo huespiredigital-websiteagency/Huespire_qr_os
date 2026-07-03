@@ -159,9 +159,16 @@ export class AuthService {
   }
 
   async validateUser(userId: string) {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId, deletedAt: null },
-      include: { role: true }
+      include: { role: true, restaurant: true }
     });
+    if (!user) {
+      throw new UnauthorizedException("User account no longer exists or has been deactivated.");
+    }
+    if (user.restaurant && (!user.restaurant.isActive || user.restaurant.deletedAt)) {
+      throw new UnauthorizedException("Restaurant account has been suspended or deleted.");
+    }
+    return user;
   }
 }

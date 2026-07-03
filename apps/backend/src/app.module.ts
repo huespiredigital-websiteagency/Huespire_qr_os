@@ -22,6 +22,7 @@ import { BillingModule } from "./billing/billing.module";
 import { KitchenModule } from "./kitchen/kitchen.module";
 import { WaiterModule } from "./waiter/waiter.module";
 import { EventsModule } from "./events/events.module";
+import { AdminModule } from "./admin/admin.module";
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { EventsModule } from "./events/events.module";
     KitchenModule,
     WaiterModule,
     EventsModule,
+    AdminModule,
   ],
 })
 export class AppModule implements NestModule {
@@ -67,7 +69,9 @@ export class AppModule implements NestModule {
         "qr/scan/(.*)",
         "qr/code/(.*)",
         "customer",
-        "customer/(.*)"
+        "customer/(.*)",
+        "admin",
+        "admin/(.*)"
       ) // Global bypasses
       .forRoutes("*");
   }

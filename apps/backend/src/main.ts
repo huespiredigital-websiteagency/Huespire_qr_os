@@ -16,9 +16,8 @@ async function bootstrap() {
 
   // Configure CORS
   app.enableCors({
-    origin: "*", // Adjust in production to frontend url
+    origin: "*",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
-    credentials: true,
   });
 
   // Serve static files

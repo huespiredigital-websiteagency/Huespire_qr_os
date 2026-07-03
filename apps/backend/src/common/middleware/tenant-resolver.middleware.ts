@@ -76,7 +76,11 @@ export class TenantResolverMiddleware implements NestMiddleware {
       "testing.huespire.digital",
       "api-testing.huespire.digital",
       "api.huespire.digital",
-      "app.restaurantos.com"
+      "app.restaurantos.com",
+      "admin.huespire.digital",
+      "platform.huespire.digital",
+      "admin.localhost",
+      "platform.localhost"
     ];
 
     // Skip tenant resolution for platform/global paths or health checks

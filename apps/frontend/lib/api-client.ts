@@ -55,8 +55,15 @@ apiClient.interceptors.response.use(
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");
-        if (!window.location.pathname.startsWith("/login")) {
-          window.location.href = "/login?expired=true";
+        const path = window.location.pathname;
+        if (path.startsWith("/admin")) {
+          if (path !== "/admin/login") {
+            window.location.href = "/admin/login?expired=true";
+          }
+        } else {
+          if (!path.startsWith("/login")) {
+            window.location.href = "/login?expired=true";
+          }
         }
       }
     }
