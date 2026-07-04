@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, ParseUUIDPipe } from "@nestjs/common";
+import { Controller, Get, Post, Body, Param, Query, UseGuards, ParseUUIDPipe, Res } from "@nestjs/common";
 import { BillingService } from "./billing.service";
 import { ConfirmPaymentDto } from "./dto/confirm-payment.dto";
 import { FilterPaymentsQueryDto } from "./dto/filter-payments.dto";
@@ -88,5 +88,22 @@ export class BillingController {
       message: "Payment reports retrieved successfully",
       data
     };
+  }
+
+  @Get("payments/receipt/:paymentId/pdf")
+  @Roles("SUPER_ADMIN", "OWNER", "MANAGER", "CASHIER")
+  @ApiOperation({ summary: "Get detailed printable receipt PDF for a payment" })
+  async getReceiptPdf(
+    @CurrentUser() user: any,
+    @Param("paymentId", ParseUUIDPipe) paymentId: string,
+    @Res() res: any
+  ) {
+    const pdfBuffer = await this.billingService.generateReceiptPdf(user.restaurantId, paymentId);
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename=receipt-${paymentId}.pdf`,
+      "Content-Length": pdfBuffer.length,
+    });
+    res.end(pdfBuffer);
   }
 }

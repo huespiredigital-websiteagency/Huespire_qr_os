@@ -33,6 +33,9 @@ export const DashboardLayoutClient: React.FC<{ children: React.ReactNode }> = ({
     if (pathname.startsWith("/dashboard/plans")) return "Platform Plans";
     if (pathname.startsWith("/dashboard/profile")) return "Account Profile";
     if (pathname.startsWith("/dashboard/roles")) return "Operational Roles";
+    if (pathname.startsWith("/dashboard/customers")) return "Customer CRM Registry";
+    if (pathname.startsWith("/dashboard/communication")) return "Marketing & Communications";
+    if (pathname.startsWith("/dashboard/logs")) return "Email Auditing Logs";
     return "Dashboard";
   };
 
@@ -56,6 +59,9 @@ export const DashboardLayoutClient: React.FC<{ children: React.ReactNode }> = ({
     if (path.startsWith("/dashboard/subscription")) return ["SUPER_ADMIN", "OWNER"];
     if (path.startsWith("/dashboard/settings")) return ["SUPER_ADMIN", "OWNER", "MANAGER"];
     if (path.startsWith("/dashboard/staff")) return ["SUPER_ADMIN", "OWNER", "MANAGER"];
+    if (path.startsWith("/dashboard/customers")) return ["SUPER_ADMIN", "OWNER", "MANAGER"];
+    if (path.startsWith("/dashboard/communication")) return ["SUPER_ADMIN", "OWNER", "MANAGER"];
+    if (path.startsWith("/dashboard/logs")) return ["SUPER_ADMIN", "OWNER", "MANAGER"];
     return null;
   };
 

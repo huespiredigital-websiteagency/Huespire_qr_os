@@ -89,6 +89,12 @@ export class AdminController {
     return await this.adminService.resetOwnerPassword(id, body);
   }
 
+  @Post("owners/:id/resend-verification")
+  @ApiOperation({ summary: "Resend email verification link to owner account" })
+  async resendOwnerVerification(@Param("id") id: string) {
+    return await this.adminService.resendOwnerVerification(id);
+  }
+
   @Post("restaurants/:id/impersonate")
   @ApiOperation({ summary: "Impersonate restaurant owner to debug dashboard context" })
   async impersonate(@Param("id") id: string, @Req() req: any) {

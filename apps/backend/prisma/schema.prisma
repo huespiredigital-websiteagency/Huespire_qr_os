@@ -158,6 +158,7 @@ model Restaurant {
   settings       RestaurantSettings?
   subscription   Subscription?
   tableSessions  TableSession[]
+  emailLogs      EmailLog[]
 
   @@index([subdomain])
   @@index([domain])
@@ -168,17 +169,43 @@ model Restaurant {
 }
 
 model RestaurantSettings {
-  id             String      @id @default(uuid())
-  restaurantId   String      @unique
-  restaurant     Restaurant  @relation(fields: [restaurantId], references: [id])
-  timezone       String      @default("Asia/Kolkata")
-  currency       String      @default("INR")
-  taxPercentage  Decimal     @default(0.00) @db.Decimal(5, 2)
-  orderPrefix    String      @default("ORD-")
-  receiptFooter  String?
-  theme          String      @default("light")
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id                         String      @id @default(uuid())
+  restaurantId               String      @unique
+  restaurant                 Restaurant  @relation(fields: [restaurantId], references: [id])
+  timezone                   String      @default("Asia/Kolkata")
+  currency                   String      @default("INR")
+  taxPercentage              Decimal     @default(0.00) @db.Decimal(5, 2)
+  orderPrefix                String      @default("ORD-")
+  receiptFooter              String?
+  theme                      String      @default("light")
+  
+  // Branding settings
+  primaryColor               String      @default("#6366f1")
+  secondaryColor             String      @default("#10b981")
+  businessEmail              String?
+  businessPhone              String?
+  businessRegistrationNumber String?
+  gstVatNumber               String?
+  address                    String?
+  city                       String?
+  state                      String?
+  country                    String?
+  postalCode                 String?
+  language                   String      @default("en")
+  businessHours              String?
+  invoicePrefix              String      @default("INV-")
+  invoiceFooter              String?
+  emailFooter                String?
+  website                    String?
+  socialLinks                String?
+  enableEmailReceipts        Boolean     @default(true)
+  enableOnlineOrdering       Boolean     @default(true)
+  enableTableOrdering        Boolean     @default(true)
+  enableTakeaway             Boolean     @default(true)
+  enableDelivery             Boolean     @default(true)
+
+  createdAt                  DateTime    @default(now())
+  updatedAt                  DateTime    @updatedAt
 
   @@map("restaurant_settings")
 }
@@ -485,17 +512,23 @@ model Variant {
 }
 
 model Customer {
-  id           String     @id @default(uuid())
-  restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-  name         String
-  phone        String
-  email        String?
-  totalOrders  Int        @default(0)
-  totalSpent   Decimal    @default(0.00) @db.Decimal(10, 2)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  orders       Order[]
+  id            String     @id @default(uuid())
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  name          String
+  phone         String
+  email         String?
+  totalOrders   Int        @default(0)
+  totalSpent    Decimal    @default(0.00) @db.Decimal(10, 2)
+  loyaltyPoints Int        @default(0)
+  notes         String?
+  vipStatus     Boolean    @default(false)
+  tags          String?
+  lastVisitAt   DateTime?
+  favoriteItems String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  orders        Order[]
 
   @@unique([restaurantId, phone])
   @@index([restaurantId])
@@ -684,17 +717,17 @@ model Coupon {
 }
 
 model Notification {
-  id           String     @id @default(uuid())
-  restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  id           String      @id @default(uuid())
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   userId       String?
-  user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   type         String
   title        String
   message      String
-  status       String     @default("UNREAD")
+  status       String      @default("UNREAD")
   sentAt       DateTime?
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime    @default(now())
 
   @@index([restaurantId])
   @@index([userId])
@@ -750,4 +783,22 @@ model TableSession {
   @@index([restaurantId, status])
   @@index([tableId, status])
   @@map("table_sessions")
+}
+
+model EmailLog {
+  id           String      @id @default(uuid())
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  recipient    String
+  sender       String
+  subject      String
+  status       String      @default("PENDING") // DELIVERED, PENDING, FAILED, OPENED
+  errorMessage String?
+  attempts     Int         @default(1)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([restaurantId])
+  @@index([status])
+  @@map("email_logs")
 }

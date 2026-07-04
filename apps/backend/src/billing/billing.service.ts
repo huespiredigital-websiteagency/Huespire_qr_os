@@ -4,12 +4,16 @@ import { EventsGateway } from "../events/events.gateway";
 import { ConfirmPaymentDto } from "./dto/confirm-payment.dto";
 import { FilterPaymentsQueryDto } from "./dto/filter-payments.dto";
 import { PaymentMethod, PaymentStatus, BillStatus, TableStatus, TableSessionStatus, OrderStatus } from "@prisma/client";
+import { EmailService } from "../email/email.service";
+import { getCustomerInvoiceTemplate } from "../email/email-templates";
+import { generateInvoicePdf } from "./pdf-generator";
 
 @Injectable()
 export class BillingService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventsGateway: EventsGateway
+    private readonly eventsGateway: EventsGateway,
+    private readonly emailService: EmailService
   ) {}
 
   async getCashierSessions(restaurantId: string, search?: string) {
@@ -252,11 +256,21 @@ export class BillingService {
 
   async confirmPayment(user: any, dto: ConfirmPaymentDto) {
     const sessionData = await this.getSessionBill(user.restaurantId, dto.sessionId);
-    const { bill, financials, session, table } = sessionData;
+    const { bill, financials, session, table, itemizedList } = sessionData;
 
     if (session.status === TableSessionStatus.CLOSED) {
       throw new BadRequestException("This table session is already closed.");
     }
+
+    const firstOrderWithCustomer = await this.prisma.order.findFirst({
+      where: { sessionId: session.id, customerId: { not: null } },
+      include: { customer: true }
+    });
+
+    const restDetails = await this.prisma.restaurant.findUnique({
+      where: { id: user.restaurantId },
+      include: { settings: true }
+    });
 
     let amountReceived = dto.amountReceived;
     let changeGiven = 0;
@@ -316,6 +330,21 @@ export class BillingService {
         data: { status: TableStatus.AVAILABLE }
       });
 
+      // Update customer CRM metrics
+      if (firstOrderWithCustomer && firstOrderWithCustomer.customerId) {
+        await tx.customer.update({
+          where: { id: firstOrderWithCustomer.customerId },
+          data: {
+            totalOrders: { increment: 1 },
+            totalSpent: { increment: financials.grandTotal },
+            lastVisitAt: new Date(),
+            loyaltyPoints: { increment: Math.floor(financials.grandTotal / 100) },
+            ...(dto.customerEmail ? { email: dto.customerEmail } : {}),
+            ...(dto.customerName ? { name: dto.customerName } : {}),
+          }
+        });
+      }
+
       return payment;
     });
 
@@ -330,6 +359,53 @@ export class BillingService {
         paymentMethod: result.paymentMethod
       }
     );
+
+    // Send automated email receipt if customer email is provided
+    if (dto.customerEmail && restDetails) {
+      try {
+        const branding = {
+          name: restDetails.name,
+          logoUrl: restDetails.logoUrl || undefined,
+          primaryColor: restDetails.settings?.primaryColor || "#6366f1",
+          secondaryColor: restDetails.settings?.secondaryColor || "#10b981",
+          emailFooter: restDetails.settings?.emailFooter || undefined,
+          website: restDetails.settings?.website || undefined,
+        };
+
+        const invoiceDetails = {
+          invoiceNumber: bill.billNumber,
+          orderNumber: session.sessionNumber,
+          tableNumber: table.tableNumber.toString(),
+          customerName: dto.customerName || "Customer",
+          items: itemizedList.map((i: any) => ({
+            name: i.itemName,
+            quantity: i.quantity,
+            price: i.unitPrice,
+          })),
+          subtotal: financials.subtotal,
+          tax: financials.taxAmount,
+          discount: financials.discountAmount,
+          total: financials.grandTotal,
+          paymentMethod: dto.paymentMethod,
+          dateTime: new Date().toLocaleString(),
+        };
+
+        const emailHtml = getCustomerInvoiceTemplate(
+          dto.customerName || "Valued Customer",
+          invoiceDetails,
+          branding
+        );
+
+        await this.emailService.sendEmail(
+          dto.customerEmail,
+          `Your Receipt from ${restDetails.name} - ${bill.billNumber}`,
+          emailHtml,
+          user.restaurantId
+        );
+      } catch (emailErr: any) {
+        console.error(`Failed to send automated email receipt: ${emailErr.message}`);
+      }
+    }
 
     return {
       success: true,
@@ -462,5 +538,43 @@ export class BillingService {
         paidAt: p.paidAt || p.createdAt
       }))
     };
+  }
+
+  async generateReceiptPdf(restaurantId: string, paymentId: string): Promise<Buffer> {
+    const payload = await this.getReceiptPayload(restaurantId, paymentId);
+    
+    // Fetch settings for branding
+    const settings = await this.prisma.restaurantSettings.findUnique({
+      where: { restaurantId }
+    });
+
+    const branding = {
+      name: payload.restaurant.name,
+      primaryColor: settings?.primaryColor || "#6366f1",
+      secondaryColor: settings?.secondaryColor || "#10b981",
+      address: payload.restaurant.address,
+      phone: payload.restaurant.phone,
+      invoiceFooter: settings?.invoiceFooter || "Thank you for dining with us!",
+    };
+
+    const invoiceDetails = {
+      invoiceNumber: payload.billNumber,
+      orderNumber: payload.sessionNumber,
+      tableNumber: payload.tableNumber.toString(),
+      customerName: "Valued Customer",
+      items: payload.items.map((i: any) => ({
+        name: i.name,
+        quantity: i.quantity,
+        price: i.unitPrice,
+      })),
+      subtotal: payload.financials.subtotal,
+      tax: payload.financials.tax,
+      discount: payload.financials.discount,
+      total: payload.financials.grandTotal,
+      paymentMethod: payload.paymentMethod,
+      dateTime: payload.paidAt.toLocaleString(),
+    };
+
+    return generateInvoicePdf(invoiceDetails, branding);
   }
 }

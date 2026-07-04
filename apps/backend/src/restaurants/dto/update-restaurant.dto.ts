@@ -78,4 +78,76 @@ export class UpdateRestaurantDto {
   @Min(0)
   @Max(100)
   taxPercentage?: number;
+
+  @IsOptional()
+  @IsString()
+  primaryColor?: string;
+
+  @IsOptional()
+  @IsString()
+  secondaryColor?: string;
+
+  @IsOptional()
+  @IsString()
+  businessEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  businessPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  businessRegistrationNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  gstVatNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  language?: string;
+
+  @IsOptional()
+  @IsString()
+  businessHours?: string;
+
+  @IsOptional()
+  @IsString()
+  invoicePrefix?: string;
+
+  @IsOptional()
+  @IsString()
+  invoiceFooter?: string;
+
+  @IsOptional()
+  @IsString()
+  emailFooter?: string;
+
+  @IsOptional()
+  @IsString()
+  website?: string;
+
+  @IsOptional()
+  @IsString()
+  socialLinks?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  enableEmailReceipts?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  enableOnlineOrdering?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  enableTableOrdering?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  enableTakeaway?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  enableDelivery?: boolean;
 }

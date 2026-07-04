@@ -90,11 +90,19 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
         try {
           const payload = this.jwtService.verify(token);
           client.data.user = payload;
-          const { restaurantId, role } = payload;
+          const { restaurantId, role, id: userId } = payload;
 
           if (restaurantId) {
             client.join(`restaurant:${restaurantId}`);
             this.logger.log(`Socket ${client.id} joined room restaurant:${restaurantId}`);
+          } else if (role === "SUPER_ADMIN") {
+            client.join("super_admin");
+            this.logger.log(`Socket ${client.id} joined room super_admin`);
+          }
+
+          if (userId) {
+            client.join(`user:${userId}`);
+            this.logger.log(`Socket ${client.id} joined room user:${userId}`);
           }
 
           this.logger.log(`Socket connected: ${client.id} (User: ${payload.email}, Role: ${role})`);
@@ -203,6 +211,17 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
     }
     if (tableId) {
       this.server.to(`table:${tableId}`).emit("table.available", { tableId });
+    }
+  }
+
+  emitNotification(notification: any) {
+    this.logger.log(`Broadcasting notification: ${notification.title}`);
+    if (notification.userId) {
+      this.server.to(`user:${notification.userId}`).emit("notification", notification);
+    } else if (notification.restaurantId) {
+      this.server.to(`restaurant:${notification.restaurantId}`).emit("notification", notification);
+    } else {
+      this.server.to("super_admin").emit("notification", notification);
     }
   }
 }

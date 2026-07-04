@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { JwtService } from "@nestjs/jwt";
+import { AuthService } from "../auth/auth.service";
 import * as argon2 from "argon2";
 import * as os from "os";
 
@@ -19,6 +20,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly authService: AuthService,
   ) {}
 
   // 1. SYSTEM DASHBOARD STATS
@@ -196,7 +198,7 @@ export class AdminService {
 
     const passwordHash = await argon2.hash(ownerPassword);
 
-    return this.prisma.$transaction(async (tx) => {
+    const resultRestaurant = await this.prisma.$transaction(async (tx) => {
       // 1. Create Restaurant
       const restaurant = await tx.restaurant.create({
         data: {
@@ -316,6 +318,16 @@ export class AdminService {
 
       return restaurant;
     });
+
+    // Send owner verification email
+    const owner = await this.prisma.user.findFirst({
+      where: { email: ownerEmail, deletedAt: null }
+    });
+    if (owner) {
+      await this.authService.sendVerificationEmail(owner.id);
+    }
+
+    return resultRestaurant;
   }
 
   async updateRestaurant(id: string, data: any) {
@@ -548,6 +560,11 @@ export class AdminService {
         totalPages: Math.ceil(total / limit)
       }
     };
+  }
+
+  async resendOwnerVerification(userId: string) {
+    await this.authService.sendVerificationEmail(userId);
+    return { success: true, message: "Verification email resent successfully" };
   }
 
   // 7. SYSTEM HEALTH CHECKS

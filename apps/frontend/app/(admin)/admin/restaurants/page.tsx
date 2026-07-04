@@ -222,8 +222,36 @@ export default function AdminRestaurants() {
                     </td>
                     <td className="p-4">
                       <div>
-                        <p className="text-slate-300">{item.users[0]?.firstName || "No Owner"}</p>
-                        <p className="text-slate-500 font-mono mt-0.5">{item.email}</p>
+                        <p className="text-slate-300 flex items-center gap-1.5">
+                          {item.users[0]?.firstName || "No Owner"}
+                          {item.users[0] && (
+                            <span className={`inline-flex px-1.5 py-0.25 text-[8px] font-extrabold uppercase rounded border ${
+                              item.users[0].isEmailVerified
+                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                                : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                            }`}>
+                              {item.users[0].isEmailVerified ? "Verified" : "Pending"}
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                          {item.email}
+                          {item.users[0] && !item.users[0].isEmailVerified && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await apiClient.post(`/admin/owners/${item.users[0].id}/resend-verification`);
+                                  addToast("Verification email link resent successfully!", "success");
+                                } catch {
+                                  addToast("Failed to resend link.", "error");
+                                }
+                              }}
+                              className="text-[9px] font-extrabold text-indigo-400 hover:text-indigo-300 underline cursor-pointer"
+                            >
+                              Resend Link
+                            </button>
+                          )}
+                        </p>
                       </div>
                     </td>
                     <td className="p-4">

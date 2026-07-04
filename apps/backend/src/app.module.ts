@@ -23,6 +23,8 @@ import { KitchenModule } from "./kitchen/kitchen.module";
 import { WaiterModule } from "./waiter/waiter.module";
 import { EventsModule } from "./events/events.module";
 import { AdminModule } from "./admin/admin.module";
+import { EmailModule } from "./email/email.module";
+import { CustomersModule } from "./customers/customers.module";
 
 @Module({
   imports: [
@@ -51,6 +53,8 @@ import { AdminModule } from "./admin/admin.module";
     WaiterModule,
     EventsModule,
     AdminModule,
+    EmailModule,
+    CustomersModule,
   ],
 })
 export class AppModule implements NestModule {

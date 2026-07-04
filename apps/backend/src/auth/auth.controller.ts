@@ -20,7 +20,7 @@ export class AuthController {
     return {
       success: true,
       message: "Restaurant onboarded successfully",
-      data: result
+      data: result,
     };
   }
 
@@ -33,7 +33,52 @@ export class AuthController {
     return {
       success: true,
       message: "Login successful",
-      data: result
+      data: result,
+    };
+  }
+
+  @Post("verify-email")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Verify restaurant owner email address" })
+  async verifyEmail(@Body() body: { token: string }) {
+    await this.authService.verifyEmail(body.token);
+    return {
+      success: true,
+      message: "Email address verified successfully.",
+    };
+  }
+
+  @Post("resend-verification")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Resend email verification link to owner" })
+  async resendVerification(@Body() body: { email: string }) {
+    await this.authService.resendVerificationEmail(body.email);
+    return {
+      success: true,
+      message: "Verification email sent successfully.",
+    };
+  }
+
+  @Post("forgot-password")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Request a password reset email" })
+  async forgotPassword(@Body() body: { email: string }) {
+    await this.authService.forgotPassword(body.email);
+    return {
+      success: true,
+      message: "If the email is registered, a password reset link has been sent.",
+    };
+  }
+
+  @Post("reset-password")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Reset password using reset token" })
+  async resetPassword(@Body() body: { token: string; password: string }) {
+    // In JavaScript/TypeScript we read body.password as the new password
+    await this.authService.resetPassword(body.token, body.password);
+    return {
+      success: true,
+      message: "Password reset successfully. You can now log in.",
     };
   }
 
@@ -52,7 +97,7 @@ export class AuthController {
         email: userProfile.email,
         role: userProfile.role.code,
         restaurantId: userProfile.restaurantId,
-      }
+      },
     };
   }
 }

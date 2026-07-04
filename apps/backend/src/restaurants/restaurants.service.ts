@@ -20,7 +20,31 @@ export class RestaurantsService {
   }
 
   async updateRestaurant(id: string, dto: UpdateRestaurantDto) {
-    const { timezone, currency, taxPercentage, domain, ...rest } = dto;
+    const {
+      timezone,
+      currency,
+      taxPercentage,
+      domain,
+      primaryColor,
+      secondaryColor,
+      businessEmail,
+      businessPhone,
+      businessRegistrationNumber,
+      gstVatNumber,
+      language,
+      businessHours,
+      invoicePrefix,
+      invoiceFooter,
+      emailFooter,
+      website,
+      socialLinks,
+      enableEmailReceipts,
+      enableOnlineOrdering,
+      enableTableOrdering,
+      enableTakeaway,
+      enableDelivery,
+      ...rest
+    } = dto;
     const cleanDomain = domain ? domain.toLowerCase().trim() : undefined;
 
     return this.prisma.$transaction(async (tx) => {
@@ -51,22 +75,41 @@ export class RestaurantsService {
         },
       });
 
-      if (timezone || currency || taxPercentage !== undefined) {
-        await tx.restaurantSettings.upsert({
-          where: { restaurantId: id },
-          create: {
-            restaurantId: id,
-            timezone: timezone || "Asia/Kolkata",
-            currency: currency || "INR",
-            taxPercentage: taxPercentage || 0,
-          },
-          update: {
-            ...(timezone && { timezone }),
-            ...(currency && { currency }),
-            ...(taxPercentage !== undefined && { taxPercentage }),
-          },
-        });
-      }
+      const settingsData = {
+        ...(timezone && { timezone }),
+        ...(currency && { currency }),
+        ...(taxPercentage !== undefined && { taxPercentage }),
+        ...(primaryColor && { primaryColor }),
+        ...(secondaryColor && { secondaryColor }),
+        ...(businessEmail !== undefined && { businessEmail }),
+        ...(businessPhone !== undefined && { businessPhone }),
+        ...(businessRegistrationNumber !== undefined && { businessRegistrationNumber }),
+        ...(gstVatNumber !== undefined && { gstVatNumber }),
+        ...(language && { language }),
+        ...(businessHours !== undefined && { businessHours }),
+        ...(invoicePrefix && { invoicePrefix }),
+        ...(invoiceFooter !== undefined && { invoiceFooter }),
+        ...(emailFooter !== undefined && { emailFooter }),
+        ...(website !== undefined && { website }),
+        ...(socialLinks !== undefined && { socialLinks }),
+        ...(enableEmailReceipts !== undefined && { enableEmailReceipts }),
+        ...(enableOnlineOrdering !== undefined && { enableOnlineOrdering }),
+        ...(enableTableOrdering !== undefined && { enableTableOrdering }),
+        ...(enableTakeaway !== undefined && { enableTakeaway }),
+        ...(enableDelivery !== undefined && { enableDelivery }),
+      };
+
+      await tx.restaurantSettings.upsert({
+        where: { restaurantId: id },
+        create: {
+          restaurantId: id,
+          timezone: timezone || "Asia/Kolkata",
+          currency: currency || "INR",
+          taxPercentage: taxPercentage || 0,
+          ...settingsData,
+        },
+        update: settingsData,
+      });
 
       return tx.restaurant.findUnique({
         where: { id },

@@ -24,7 +24,9 @@ import {
   Receipt,
   Banknote,
   Flame,
-  ChefHat
+  ChefHat,
+  Mail,
+  FileText
 } from "lucide-react";
 
 export const Sidebar: React.FC = () => {
@@ -130,6 +132,24 @@ export const Sidebar: React.FC = () => {
       href: "/dashboard/plans",
       icon: Shield,
       roles: ["SUPER_ADMIN"],
+    },
+    {
+      name: "CRM Customers",
+      href: "/dashboard/customers",
+      icon: Users,
+      roles: ["SUPER_ADMIN", "OWNER", "MANAGER"],
+    },
+    {
+      name: "Marketing Center",
+      href: "/dashboard/communication",
+      icon: Mail,
+      roles: ["SUPER_ADMIN", "OWNER", "MANAGER"],
+    },
+    {
+      name: "Email Logs",
+      href: "/dashboard/logs",
+      icon: FileText,
+      roles: ["SUPER_ADMIN", "OWNER", "MANAGER"],
     },
     {
       name: "Profile",
