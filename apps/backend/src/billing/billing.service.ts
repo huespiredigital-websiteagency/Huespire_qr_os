@@ -263,7 +263,7 @@ export class BillingService {
     }
 
     const firstOrderWithCustomer = await this.prisma.order.findFirst({
-      where: { sessionId: session.id, customerId: { not: null } },
+      where: { sessionId: session.id },
       include: { customer: true }
     });
 
