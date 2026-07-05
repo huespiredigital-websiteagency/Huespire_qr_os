@@ -43,6 +43,7 @@ export default function MenuImportPage() {
   const [previewData, setPreviewData] = useState<any>(null);
   const [parsedCount, setParsedCount] = useState<any>(null);
   const [importSuccessData, setImportSuccessData] = useState<any>(null);
+  const [showExportOptions, setShowExportOptions] = useState<boolean>(false);
 
   // Template Download Handler
   const handleDownloadTemplate = async (type: string) => {
@@ -92,9 +93,9 @@ export default function MenuImportPage() {
   };
 
   // Export Menu Handler
-  const handleExportMenu = async () => {
+  const handleExportMenu = async (type: string = "unified") => {
     try {
-      const response = await apiClient.get("/menu-import/export", {
+      const response = await apiClient.get(`/menu-import/export?type=${type}`, {
         responseType: "blob"
       });
       const blob = new Blob([response.data], {
@@ -103,14 +104,15 @@ export default function MenuImportPage() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "menu_export.xlsx");
+      link.setAttribute("download", `${type}_export.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
-      addToast("Menu exported successfully.", "success");
+      addToast(`${type.replace("_", " ").toUpperCase()} exported successfully.`, "success");
+      setShowExportOptions(false);
     } catch (err) {
       console.error(err);
-      addToast("Failed to export current menu.", "error");
+      addToast("Failed to export menu data.", "error");
     }
   };
 
@@ -260,13 +262,46 @@ export default function MenuImportPage() {
             Production-ready Excel/CSV importer with smart string normalization and zero silent failures.
           </p>
         </div>
-        <Button
-          onClick={handleExportMenu}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white border-none py-3 px-5 rounded-xl cursor-pointer"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Export Current Menu
-        </Button>
+        <div className="relative">
+          <Button
+            onClick={() => setShowExportOptions(!showExportOptions)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white border-none py-3 px-5 rounded-xl cursor-pointer flex items-center"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Current Menu
+          </Button>
+
+          {showExportOptions && (
+            <>
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setShowExportOptions(false)} 
+              />
+              <div className="absolute right-0 mt-2 w-56 rounded-xl bg-slate-950 border border-slate-800 shadow-2xl z-50 p-2 text-sm">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 py-1.5 border-b border-slate-900">
+                  Select Export Option
+                </p>
+                <div className="space-y-1 mt-1">
+                  {[
+                    { id: "unified", label: "Unified Excel (All Sheets)" },
+                    { id: "categories", label: "Categories Only" },
+                    { id: "menu_items", label: "Menu Items Only" },
+                    { id: "variants", label: "Variants Only" },
+                    { id: "addons", label: "Add-ons Only" }
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => handleExportMenu(opt.id)}
+                      className="w-full text-left px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-900 rounded-lg transition cursor-pointer font-medium"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

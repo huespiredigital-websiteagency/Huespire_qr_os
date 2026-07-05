@@ -135,16 +135,18 @@ export class MenuImportController {
   @ApiOperation({ summary: "Export active menu items to Excel" })
   async exportMenu(
     @CurrentUser() user: any,
-    @Res() res: Response
+    @Res() res: Response,
+    @Query("type") type?: string
   ) {
-    const buffer = await this.importService.exportMenu(user.restaurantId);
+    const activeType = type || "unified";
+    const buffer = await this.importService.exportMenu(user.restaurantId, activeType);
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=menu_export_${user.restaurantId}.xlsx`
+      `attachment; filename=${activeType}_export_${user.restaurantId}.xlsx`
     );
     res.status(HttpStatus.OK).send(buffer);
   }

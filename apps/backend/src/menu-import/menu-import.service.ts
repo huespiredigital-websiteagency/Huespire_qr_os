@@ -988,7 +988,7 @@ export class MenuImportService {
     return (await workbook.xlsx.writeBuffer()) as unknown as Buffer;
   }
 
-  async exportMenu(restaurantId: string): Promise<Buffer> {
+  async exportMenu(restaurantId: string, type: string = "unified"): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     
     const [categories, menuItems, addons] = await Promise.all([
@@ -1011,69 +1011,79 @@ export class MenuImportService {
       })
     ]);
 
-    const catSheet = workbook.addWorksheet("Categories");
-    catSheet.columns = [
-      { header: "Name", key: "name", width: 25 },
-      { header: "Description", key: "description", width: 35 }
-    ];
-    categories.forEach(cat => {
-      catSheet.addRow({
-        name: cat.name,
-        description: cat.description ?? ""
-      });
-    });
+    const includeAll = type === "unified";
 
-    const itemSheet = workbook.addWorksheet("Menu Items");
-    itemSheet.columns = [
-      { header: "Category", key: "category", width: 25 },
-      { header: "Name", key: "name", width: 25 },
-      { header: "Description", key: "description", width: 35 },
-      { header: "Price", key: "price", width: 12 },
-      { header: "Preparation Time (mins)", key: "preparationTime", width: 22 }
-    ];
-    menuItems.forEach(item => {
-      itemSheet.addRow({
-        category: item.category.name,
-        name: item.name,
-        description: item.description ?? "",
-        price: Number(item.price),
-        preparationTime: item.preparationTime
-      });
-    });
-
-    const varSheet = workbook.addWorksheet("Variants");
-    varSheet.columns = [
-      { header: "Menu Item", key: "menuItem", width: 25 },
-      { header: "Variant Name", key: "variantName", width: 20 },
-      { header: "Price", key: "price", width: 12 }
-    ];
-    menuItems.forEach(item => {
-      item.variants.forEach(v => {
-        varSheet.addRow({
-          menuItem: item.name,
-          variantName: v.name,
-          price: Number(v.price)
+    if (includeAll || type === "categories") {
+      const catSheet = workbook.addWorksheet("Categories");
+      catSheet.columns = [
+        { header: "Name", key: "name", width: 25 },
+        { header: "Description", key: "description", width: 35 }
+      ];
+      categories.forEach(cat => {
+        catSheet.addRow({
+          name: cat.name,
+          description: cat.description ?? ""
         });
       });
-    });
+    }
 
-    const addonSheet = workbook.addWorksheet("Add-ons");
-    addonSheet.columns = [
-      { header: "Name", key: "name", width: 25 },
-      { header: "Price", key: "price", width: 12 },
-      { header: "Categories (optional)", key: "categories", width: 30 },
-      { header: "Menu Items (optional)", key: "menuItems", width: 35 }
-    ];
-    addons.forEach(addon => {
-      const catNames = addon.categoryAddons.map(ca => ca.category.name).join(",");
-      const itemNames = addon.menuItemAddons.map(ma => ma.menuItem.name).join(",");
-      addonSheet.addRow({
-        name: addon.name,
-        price: Number(addon.additionalPrice),
-        categories: catNames,
-        menuItems: itemNames
+    if (includeAll || type === "menu_items") {
+      const itemSheet = workbook.addWorksheet("Menu Items");
+      itemSheet.columns = [
+        { header: "Category", key: "category", width: 25 },
+        { header: "Name", key: "name", width: 25 },
+        { header: "Description", key: "description", width: 35 },
+        { header: "Price", key: "price", width: 12 },
+        { header: "Preparation Time (mins)", key: "preparationTime", width: 22 }
+      ];
+      menuItems.forEach(item => {
+        itemSheet.addRow({
+          category: item.category.name,
+          name: item.name,
+          description: item.description ?? "",
+          price: Number(item.price),
+          preparationTime: item.preparationTime
+        });
       });
-    });
+    }
+
+    if (includeAll || type === "variants") {
+      const varSheet = workbook.addWorksheet("Variants");
+      varSheet.columns = [
+        { header: "Menu Item", key: "menuItem", width: 25 },
+        { header: "Variant Name", key: "variantName", width: 20 },
+        { header: "Price", key: "price", width: 12 }
+      ];
+      menuItems.forEach(item => {
+        item.variants.forEach(v => {
+          varSheet.addRow({
+            menuItem: item.name,
+            variantName: v.name,
+            price: Number(v.price)
+          });
+        });
+      });
+    }
+
+    if (includeAll || type === "addons") {
+      const addonSheet = workbook.addWorksheet("Add-ons");
+      addonSheet.columns = [
+        { header: "Name", key: "name", width: 25 },
+        { header: "Price", key: "price", width: 12 },
+        { header: "Categories (optional)", key: "categories", width: 30 },
+        { header: "Menu Items (optional)", key: "menuItems", width: 35 }
+      ];
+      addons.forEach(addon => {
+        const catNames = addon.categoryAddons.map(ca => ca.category.name).join(",");
+        const itemNames = addon.menuItemAddons.map(ma => ma.menuItem.name).join(",");
+        addonSheet.addRow({
+          name: addon.name,
+          price: Number(addon.additionalPrice),
+          categories: catNames,
+          menuItems: itemNames
+        });
+      });
+    }
 
     return (await workbook.xlsx.writeBuffer()) as unknown as Buffer;
   }
