@@ -27,6 +27,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAdmin, setIsAdmin] = useState(false);
   const [impersonating, setImpersonating] = useState(false);
   const [healthStatus, setHealthStatus] = useState<string>("HEALTHY");
+  const [isDomainAllowed, setIsDomainAllowed] = useState(true);
+
+  // Validate admin subdomain origin
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname.toLowerCase();
+      const allowedAdminDomains = [
+        "admin.huespire.digital",
+        "admin.testing.huespire.digital",
+        "testing.huespire.digital",
+        "admin.localhost",
+        "localhost",
+        "127.0.0.1"
+      ];
+      const isAllowed = allowedAdminDomains.includes(host) || host.endsWith(".nip.io");
+      setIsDomainAllowed(isAllowed);
+    }
+  }, []);
 
   // Impersonation detection
   useEffect(() => {
@@ -103,6 +121,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     logout();
     router.push("/admin/login");
   };
+
+  if (!isDomainAllowed) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white text-center font-sans">
+        <div className="inline-flex h-16 w-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 items-center justify-center text-rose-500 mb-6">
+          <Shield className="h-8 w-8" />
+        </div>
+        <h1 className="text-2xl font-black tracking-tight mb-2">Access Restricted</h1>
+        <p className="text-slate-400 text-sm max-w-md leading-relaxed mb-6">
+          This platform administration control center is private. It can only be accessed via the official administrator gateway at <span className="text-indigo-400 font-semibold font-mono">admin.huespire.digital</span>.
+        </p>
+        <Link
+          href={
+            typeof window !== "undefined"
+              ? `${window.location.protocol}//${
+                  window.location.hostname.includes("testing")
+                    ? "admin.testing.huespire.digital"
+                    : window.location.hostname.includes("localhost")
+                    ? "admin.localhost:3000"
+                    : "admin.huespire.digital"
+                }/admin/login`
+              : "#"
+          }
+          className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 font-extrabold text-sm rounded-xl transition cursor-pointer"
+        >
+          Go to Official Gateway
+        </Link>
+      </div>
+    );
+  }
 
   if (isInitializing) {
     return (
