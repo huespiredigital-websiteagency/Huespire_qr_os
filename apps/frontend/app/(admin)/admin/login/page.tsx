@@ -15,10 +15,7 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Restore session
-  useEffect(() => {
-    restoreSession();
-  }, []);
+
 
   // Redirect if already authenticated as SUPER_ADMIN
   useEffect(() => {

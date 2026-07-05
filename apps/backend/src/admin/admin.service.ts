@@ -359,9 +359,32 @@ export class AdminService {
   async deleteRestaurant(id: string) {
     // Cascade delete all records associated with this restaurant
     return this.prisma.$transaction(async (tx) => {
-      // 1. Delete dependent relations
+      // 1. Delete dependent relations and pivot tables
+      await tx.menuImage.deleteMany({ where: { restaurantId: id } });
+      
+      // Delete variant dependencies
+      await tx.orderItemVariant.deleteMany({
+        where: { orderItem: { order: { restaurantId: id } } }
+      });
+      await tx.variant.deleteMany({ where: { restaurantId: id } });
+      
+      // Delete addon dependencies
+      await tx.orderItemAddon.deleteMany({
+        where: { orderItem: { order: { restaurantId: id } } }
+      });
+      await tx.menuItemAddon.deleteMany({
+        where: { addon: { restaurantId: id } }
+      });
+      await tx.categoryAddon.deleteMany({
+        where: { addon: { restaurantId: id } }
+      });
+      await tx.addon.deleteMany({ where: { restaurantId: id } });
+      
       await tx.qRCode.deleteMany({ where: { restaurantId: id } });
       await tx.payment.deleteMany({ where: { restaurantId: id } });
+      await tx.bill.deleteMany({ where: { restaurantId: id } });
+      await tx.coupon.deleteMany({ where: { restaurantId: id } });
+      
       await tx.orderItem.deleteMany({
         where: { order: { restaurantId: id } }
       });
@@ -372,6 +395,11 @@ export class AdminService {
       await tx.category.deleteMany({ where: { restaurantId: id } });
       await tx.subscription.deleteMany({ where: { restaurantId: id } });
       await tx.restaurantSettings.deleteMany({ where: { restaurantId: id } });
+      
+      await tx.customer.deleteMany({ where: { restaurantId: id } });
+      await tx.notification.deleteMany({ where: { restaurantId: id } });
+      await tx.emailLog.deleteMany({ where: { restaurantId: id } });
+      await tx.auditLog.deleteMany({ where: { restaurantId: id } });
       await tx.user.deleteMany({ where: { restaurantId: id } });
       
       // 2. Delete the restaurant itself
