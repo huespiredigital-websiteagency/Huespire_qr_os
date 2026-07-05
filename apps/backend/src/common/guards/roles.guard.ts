@@ -27,7 +27,7 @@ export class RolesGuard implements CanActivate {
     }
 
     // Restrict SUPER_ADMIN endpoints to official administrator subdomains
-    if (requiredRoles.includes("SUPER_ADMIN")) {
+    if (user.role === "SUPER_ADMIN") {
       const request = context.switchToHttp().getRequest();
       const xTenantDomain = request.headers["x-tenant-domain"];
       const hostHeader = request.headers.host || "";
