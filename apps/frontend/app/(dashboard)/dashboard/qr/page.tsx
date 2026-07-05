@@ -498,10 +498,18 @@ export default function QRCodesPage() {
                     </div>
 
                     <div className="text-[10px] bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg text-slate-500 break-all select-all font-mono">
-                      {restaurant?.domain 
-                        ? `https://${restaurant.domain}/menu/${qr.qrToken}`
-                        : `${typeof window !== "undefined" ? window.location.protocol : "https:"}//${restaurant?.subdomain || "menu"}.${typeof window !== "undefined" ? window.location.host : "huespire.digital"}/menu/${qr.qrToken}`
-                      }
+                      {(() => {
+                        if (restaurant?.domain) {
+                          return `https://${restaurant.domain}/menu/${qr.qrToken}`;
+                        }
+                        const protocol = typeof window !== "undefined" ? window.location.protocol : "https:";
+                        const host = typeof window !== "undefined" ? window.location.host : "huespire.digital";
+                        let baseHost = host;
+                        if (restaurant?.subdomain && host.startsWith(`${restaurant.subdomain}.`)) {
+                          baseHost = host.substring(restaurant.subdomain.length + 1);
+                        }
+                        return `${protocol}//${restaurant?.subdomain || "menu"}.${baseHost}/menu/${qr.qrToken}`;
+                      })()}
                     </div>
 
                     {/* QR Code image embed */}

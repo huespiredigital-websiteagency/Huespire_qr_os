@@ -14,19 +14,12 @@ export class QRService {
       return `https://${restaurant.domain}/menu/${token}`;
     }
 
-    const appUrl = process.env.APP_URL || "http://localhost:3000";
-    const isLocal = appUrl.includes("localhost") || appUrl.includes("127.0.0.1") || appUrl.includes("nip.io");
+    const appUrl = process.env.APP_URL || "https://huespire.digital";
+    const baseHost = appUrl.replace(/^https?:\/\//, "").split(":")[0];
+    const port = appUrl.includes("localhost") || appUrl.includes("127.0.0.1") ? ":3000" : "";
+    const protocol = appUrl.startsWith("https") ? "https" : "http";
 
-    if (isLocal) {
-      const baseHost = appUrl.replace(/^https?:\/\//, "");
-      if (baseHost.includes("localhost")) {
-        return `http://${restaurant.subdomain}.localhost:3000/menu/${token}`;
-      }
-      return `http://${baseHost}/menu/${token}`;
-    }
-
-    const domain = `${restaurant.subdomain}.huespire.digital`;
-    return `https://${domain}/menu/${token}`;
+    return `${protocol}://${restaurant.subdomain}.${baseHost}${port}/menu/${token}`;
   }
 
   async generate(restaurantId: string, tableId: string): Promise<QRCode> {
