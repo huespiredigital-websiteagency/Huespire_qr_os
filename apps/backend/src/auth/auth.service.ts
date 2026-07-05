@@ -137,10 +137,12 @@ export class AuthService {
       throw new UnauthorizedException("Restaurant access is currently unavailable.");
     }
 
-    // Strict Rule: ONLY Restaurant Owners should verify their email before logging in.
+    // Email verification requirement bypassed as requested
+    /*
     if (user.role.code === "OWNER" && !user.emailVerified) {
       throw new UnauthorizedException("Your email address must be verified before you can access the dashboard.");
     }
+    */
 
     // Verify password
     const isPasswordValid = await argon2.verify(user.passwordHash, input.password);
